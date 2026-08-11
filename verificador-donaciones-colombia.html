@@ -1,0 +1,560 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificador de donaciones — Terremoto Colombia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#0F1720;
+  --ink-70:#4A5560;
+  --ink-40:#8B959E;
+  --paper:#E7EAEC;
+  --card:#FBFBFA;
+  --rule:#C6CCD1;
+
+  /* semáforo derivado de la bandera: amarillo = sin confirmar, azul = coincide, rojo = alerta */
+  --azul:#14487F;
+  --amarillo:#B57C00;
+  --rojo:#AF2118;
+
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --disp:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --body:'Source Serif 4',Georgia,serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:17px;line-height:1.55;
+}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+
+/* ---------- cabecera ---------- */
+header{padding:34px 0 26px;border-bottom:2px solid var(--ink)}
+.eyebrow{
+  font-family:var(--disp);font-variation-settings:'wdth' 78,'wght' 700;
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--rojo);
+  display:flex;align-items:center;gap:8px;margin:0 0 12px
+}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--rojo);display:block}
+h1{
+  font-family:var(--disp);font-variation-settings:'wdth' 70,'wght' 850;
+  font-size:clamp(34px,9vw,60px);line-height:.94;letter-spacing:-.015em;
+  margin:0 0 14px;text-transform:uppercase;
+}
+.sub{margin:0;max-width:52ch;color:var(--ink-70)}
+.stamp{
+  font-family:var(--mono);font-size:11px;color:var(--ink-40);
+  margin-top:16px;text-transform:uppercase;letter-spacing:.06em
+}
+
+/* ---------- consulta ---------- */
+.checker{padding:28px 0 8px}
+label.q{
+  display:block;font-family:var(--disp);font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:18px;margin-bottom:6px
+}
+.hint{font-size:14px;color:var(--ink-70);margin:0 0 12px}
+textarea{
+  width:100%;min-height:112px;resize:vertical;padding:14px;
+  font-family:var(--mono);font-size:14px;line-height:1.5;
+  background:var(--card);color:var(--ink);
+  border:2px solid var(--ink);border-radius:2px;
+}
+textarea:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+button{
+  font-family:var(--disp);font-variation-settings:'wdth' 82,'wght' 750;
+  font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  padding:13px 22px;border:2px solid var(--ink);border-radius:2px;
+  background:var(--ink);color:var(--paper);cursor:pointer
+}
+button.ghost{background:transparent;color:var(--ink)}
+button:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+button:hover{background:var(--azul);border-color:var(--azul);color:#fff}
+
+/* ---------- veredicto ---------- */
+#out{margin-top:22px}
+.verdict{border:2px solid;border-radius:2px;background:var(--card);margin-bottom:14px;overflow:hidden}
+.verdict .bar{
+  padding:10px 16px;color:#fff;
+  font-family:var(--disp);font-variation-settings:'wdth' 80,'wght' 800;
+  font-size:14px;letter-spacing:.09em;text-transform:uppercase;
+  display:flex;gap:10px;align-items:baseline;justify-content:space-between
+}
+.verdict .bar span:last-child{font-size:11px;font-variation-settings:'wdth' 75,'wght' 600;opacity:.8}
+.verdict .bd{padding:16px}
+.verdict p{margin:0 0 10px}
+.verdict p:last-child{margin-bottom:0}
+.v-rojo{border-color:var(--rojo)} .v-rojo .bar{background:var(--rojo)}
+.v-amarillo{border-color:var(--amarillo)} .v-amarillo .bar{background:var(--amarillo)}
+.v-azul{border-color:var(--azul)} .v-azul .bar{background:var(--azul)}
+
+/* firma: comparación dígito a dígito */
+.diff{margin:12px 0;padding:12px;background:var(--paper);border-left:3px solid var(--rojo)}
+.diff .lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-70);margin-bottom:3px}
+.diff .val{font-family:var(--mono);font-size:19px;letter-spacing:.06em;word-break:break-all}
+.diff .val b{background:var(--rojo);color:#fff;font-weight:700;padding:0 1px}
+.diff .gap{height:10px}
+
+ul.flags{list-style:none;margin:12px 0 0;padding:0}
+ul.flags li{
+  padding:9px 0 9px 26px;border-top:1px solid var(--rule);position:relative;font-size:15px
+}
+ul.flags li::before{
+  content:"!";position:absolute;left:0;top:11px;
+  font-family:var(--disp);font-variation-settings:'wght' 900;font-size:11px;
+  width:16px;height:16px;line-height:16px;text-align:center;
+  background:var(--rojo);color:#fff;border-radius:50%
+}
+ul.flags li em{display:block;font-style:normal;color:var(--ink-70);font-size:13px;margin-top:2px}
+
+/* ---------- directorio ---------- */
+h2{
+  font-family:var(--disp);font-variation-settings:'wdth' 72,'wght' 800;
+  font-size:clamp(24px,6vw,36px);text-transform:uppercase;letter-spacing:-.01em;
+  margin:56px 0 4px;padding-top:20px;border-top:2px solid var(--ink)
+}
+h2 + .hint{margin-bottom:20px;max-width:56ch}
+input.buscar{
+  width:100%;padding:13px 14px;margin-bottom:16px;
+  font-family:var(--mono);font-size:14px;
+  background:var(--card);color:var(--ink);
+  border:2px solid var(--ink);border-radius:2px;
+}
+input.buscar:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+.org{background:var(--card);border:1px solid var(--rule);border-radius:2px;padding:18px;margin-bottom:14px}
+.org h3{
+  font-family:var(--disp);font-variation-settings:'wdth' 85,'wght' 750;
+  font-size:19px;margin:0 0 3px;line-height:1.2
+}
+.nit{font-family:var(--mono);font-size:11px;color:var(--ink-40);letter-spacing:.04em}
+.org .what{font-size:15px;color:var(--ink-70);margin:9px 0 14px}
+.pay{border-top:1px solid var(--rule);padding:9px 0;display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:baseline}
+.pay .t{font-size:13px;color:var(--ink-70)}
+.pay .v{font-family:var(--mono);font-size:15px;word-break:break-all;grid-column:1/-1}
+.tag{
+  font-family:var(--disp);font-variation-settings:'wdth' 75,'wght' 700;
+  font-size:9px;letter-spacing:.09em;text-transform:uppercase;
+  padding:2px 6px;border:1px solid var(--ink-40);color:var(--ink-70);white-space:nowrap
+}
+.tag.press{border-color:var(--amarillo);color:var(--amarillo)}
+.org a{color:var(--azul);text-decoration-thickness:1px;text-underline-offset:2px}
+.org .src{font-size:12px;color:var(--ink-40);margin:14px 0 0;padding-top:10px;border-top:1px solid var(--rule)}
+
+details{border-top:1px solid var(--rule);padding:14px 0}
+summary{cursor:pointer;font-family:var(--disp);font-variation-settings:'wdth' 85,'wght' 700;font-size:15px}
+summary:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+details p,details li{font-size:15px}
+footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-size:14px;color:var(--ink-70)}
+@media (prefers-reduced-motion:no-preference){
+  .verdict{animation:pop .18s ease-out}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Sismo 7,4 · Chocó · 10 ago 2026</p>
+  <h1>¿A dónde<br>va tu plata?</h1>
+  <p class="sub">Pega una cuenta, una llave Bre-B, un enlace o el mensaje completo que te llegó. Se compara contra los canales que las organizaciones publicaron oficialmente.</p>
+  <p class="stamp">Verificación local · nada de lo que pegues sale de tu dispositivo</p>
+  <div id="frescura"></div>
+</header>
+
+<section class="checker">
+  <label class="q" for="in">Pega lo que quieres revisar</label>
+  <p class="hint">Funciona con un solo dato suelto — una cuenta, una llave Bre-B, un enlace — o con el mensaje o pantallazo completo (WhatsApp, Instagram, TikTok): con el texto completo también se revisan las señales de fraude, no solo los números.</p>
+  <textarea id="in" placeholder="Ej.: URGENTE 🙏 Ayuda a las familias de Pereira. Cuenta Bancolombia 15264342371 a nombre de Fundación... Bre-B: emergenciaterrem"></textarea>
+  <div class="row">
+    <button id="go">Verificar</button>
+    <button id="clr" class="ghost">Limpiar</button>
+  </div>
+  <div id="out"></div>
+</section>
+
+<h2>Canales publicados</h2>
+<p class="hint">Cada dato tiene su fuente y su fecha. <strong>Antes de transferir, ábrelo en el sitio oficial de la organización</strong> y compara — no confíes en esta lista como última palabra.</p>
+<div id="dir"></div>
+
+<h2>Puntos de acopio</h2>
+<p class="hint">Escribe tu ciudad o pueblo. Solo se reciben alimentos no perecederos y elementos de aseo — no lleves ropa, medicamentos ni productos vencidos: saturan la bodega y hay que botarlos.</p>
+<input type="search" id="buscar-acopio" class="buscar" placeholder="Ej.: Manizales, Cali, Bogotá…" autocomplete="off">
+<div id="acopio"></div>
+
+<h2>Cómo leerlo</h2>
+<details><summary>Por qué no existe un veredicto "es legítimo"</summary>
+<p>Ninguna herramienta automática puede certificar que una organización va a entregar el dinero. Lo único que se puede afirmar con certeza es si un dato <em>coincide o no</em> con lo que una organización publicó. Todo lo demás son señales de riesgo, y una señal de riesgo no es una acusación: una campaña de barrio perfectamente honesta no va a aparecer en esta lista.</p></details>
+<details><summary>Qué revisa la herramienta</summary>
+<p>Coincidencia exacta de cuentas, llaves Bre-B y dominios contra la lista. Parecido de un dígito o dos con una cuenta oficial, que es el fraude más común. Dominios que imitan el nombre de una organización sin serlo. Dígito de verificación del NIT según el algoritmo de la DIAN. Y patrones de texto asociados a fraude: cuentas personales, links acortados, criptomonedas, petición de claves, cadenas de reenvío.</p></details>
+<details><summary>Qué NO revisa</summary>
+<p>Antigüedad del dominio, registro en RUES o en el Registro Único de ESAL, historial de la organización, ni si los fondos efectivamente llegaron. Eso requiere consultas a registros públicos que no se pueden hacer desde el navegador.</p></details>
+<details><summary>Si perdiste contacto con alguien</summary>
+<p>No busques listas de víctimas en redes: circulan nombres falsos y duplicados. La Cruz Roja Colombiana maneja el programa de Protección de Vínculos Familiares en <a href="mailto:rcf@cruzrojacolombiana.org">rcf@cruzrojacolombiana.org</a> y WhatsApp +57&nbsp;321&nbsp;213&nbsp;9525.</p></details>
+
+<footer>
+  <p>Herramienta ciudadana, sin vínculo con ninguna de las organizaciones listadas. La lista se arma con lo publicado por las organizaciones y reportado por prensa el 10 y 11 de agosto de 2026; los canales cambian rápido en una emergencia.</p>
+</footer>
+</div>
+
+<script>
+/* ============ DATOS ============ */
+/* Copia local de respaldo. La fuente de verdad es datos.json (ver CARGA REMOTA). */
+const ORGS_EMBEBIDO = [
+  {
+    name:"ABACO — Asociación de Bancos de Alimentos de Colombia",
+    nit:"900326456-1",
+    what:"Corredor humanitario hacia Chocó, Valle del Cauca, Risaralda y Caldas: transporte de ayuda y compra de canasta básica para albergues, hospitales y familias autoalbergadas.",
+    domains:["abaco.org.co"],
+    keywords:["abaco"],
+    links:[["Campaña Colombia 2026","https://donahoy.abaco.org.co/colombia2026"]],
+    pay:[
+      ["Cuenta corriente Bancolombia","15264342372","oficial"],
+      ["Llave Bre-B","0090989753","oficial"]
+    ],
+    src:["Verificado a mano en donahoy.abaco.org.co, 11 ago 2026","https://donahoy.abaco.org.co/colombia2026"]
+  },
+  {
+    name:"Cruz Roja Colombiana — #TodosPorColombia",
+    nit:null,
+    what:"Rescate, atención médica, agua segura, apoyo psicosocial y reunificación familiar. También recibe donación de sangre en sus puntos habilitados.",
+    domains:["cruzrojacolombiana.org","cruzrojabogota.org.co"],
+    keywords:["cruzroja","cruz-roja","cruzrojacol"],
+    links:[
+      ["Sitio institucional","https://www.cruzrojacolombiana.org/"],
+      ["Portal de donación","https://ayuda.cruzrojacolombiana.org/"]
+    ],
+    pay:[
+      ["Línea de atención","601 4376300","press"],
+      ["Contacto donaciones","donaciones@cruzrojacolombiana.org","press"],
+      ["Vínculos familiares (WhatsApp)","+57 321 213 9525","press"]
+    ],
+    nodata:"No encontramos un número de cuenta bancaria publicado en los canales oficiales al 11 ago 2026: el portal de donación es una pasarela de pago en línea (tarjeta/PSE), no muestra una cuenta estática. Dona directamente desde el portal oficial.",
+    src:["Verificado a mano en cruzrojacolombiana.org y ayuda.cruzrojacolombiana.org, 11 ago 2026","https://www.cruzrojacolombiana.org/"]
+  },
+  {
+    name:"Fundación PLAN — Terremoto en Colombia",
+    nit:null,
+    what:"Fondo de respuesta para niñas, niños, adolescentes y sus familias. 63 años de operación en Colombia en crisis humanitarias.",
+    domains:["plan.org.co"],
+    keywords:["fundacionplan","plan.org"],
+    links:[["Campaña Terremoto en Colombia","https://plan.org.co/quiero-ayudar/terremoto-en-colombia/"]],
+    pay:[],
+    nodata:"No encontramos una llave Bre-B ni número de cuenta en la página oficial al 11 ago 2026: el canal disponible ahí es un formulario de donación en línea con montos fijos. Dona directamente desde ese formulario.",
+    src:["Verificado a mano en plan.org.co, 11 ago 2026","https://plan.org.co/quiero-ayudar/terremoto-en-colombia/"]
+  },
+  {
+    name:"Banco de Alimentos de Bogotá",
+    nit:null,
+    what:"Administra y distribuye la recolección de alimentos. Es la organización que gestiona las donaciones económicas hechas desde la app de Rappi.",
+    domains:["bancodealimentos.org.co"],
+    keywords:["bancodealimentos","bancoalimentos"],
+    links:[["Sitio oficial","https://www.bancodealimentos.org.co/"]],
+    pay:[["Llave Bre-B","0091677852","oficial"]],
+    src:["Verificado a mano en bancodealimentos.org.co, 11 ago 2026","https://www.bancodealimentos.org.co/donaciones-hoy-min/"]
+  },
+  {
+    name:"Presentes — Colombia se levanta",
+    nit:null,
+    what:"Campaña para familias que perdieron vivienda y bienes. Opera con la Alcaldía de Medellín y los bancos de alimentos.",
+    domains:[],
+    keywords:["presentes"],
+    links:[],
+    pay:[],
+    nodata:"Sin datos de pago confirmados en esta lista. Búscalos en el canal oficial de la organización antes de transferir.",
+    src:["Alcaldía de Medellín / prensa, 10 ago 2026",null]
+  }
+];
+
+const ACOPIO_EMBEBIDO = [
+  ["Bogotá — Cruz Roja","SAMU Sur: Av. Cra 68 #31-41 sur · SAMU Norte: Cl 134 con Cra 7B bis #132-31 · Centro de Salvamento Acuático: Av. La Esmeralda #63-81 · Sede Cruz Roja: Cra 24 #73-38 · Bodega: Diag 79B #62-53 · Palacio de los Deportes: Cl 63 #59A-06"],
+  ["Bogotá — Banco de Alimentos","Calle 19 A #32-50"],
+  ["Medellín","FUBAM: Cra 52 #30 A-97 · Fundación Saciar: Cra 50 #25-261"],
+  ["Cali","Plazoleta Jairo Varela: Av. 2 Norte #10 Norte-1 · Fundación Arquidiocesana Banco de Alimentos: Cl 24 #6-103"],
+  ["Manizales","El Banco de Alimentos de Manizales quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. Mientras tanto, la Alcaldía habilitó los coliseos Mayor y Menor como albergues, donde también reciben alimentos, agua, ropa y cobijas. Donación de sangre: cancha auxiliar junto a Bomberos Palogrande (detrás del Estadio Palogrande) y Hemocentro del Café. No verificamos estas ubicaciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía antes de desplazarte."],
+  ["Pereira","El Banco de Alimentos de Pereira quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. La Alcaldía reportó 7 puntos CAFE para donaciones ciudadanas: Consota (Villa Consota, Mz 7 y 8), Perla del Otún (diagonal a la iglesia de los 2.500 Lotes), El Remanso (junto al centro de salud del barrio), Kennedy (parque principal), Ormaza (Calle 3 bis), San Nicolás y Comuna del Café. No verificamos estas direcciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía de Pereira antes de desplazarte."]
+];
+
+/* Estado vivo: arranca con el respaldo y se sustituye si datos.json responde. */
+let ORGS = ORGS_EMBEBIDO;
+let ACOPIO = ACOPIO_EMBEBIDO;
+let VERIFICADO_EL = "2026-08-11T09:00:00Z";
+let ORIGEN = "respaldo";
+
+const TEXT_FLAGS = [
+  [/\b(nequi|daviplata)\b/i,"Pago a una cuenta personal (Nequi o Daviplata)","Las organizaciones grandes reciben en cuentas empresariales a nombre de la entidad. Una cuenta personal no deja rastro auditable ni permite reclamar."],
+  [/(bit\.ly|tinyurl|cutt\.ly|acortar|short\.link|t\.co\/|is\.gd|rb\.gy)/i,"Enlace acortado","Oculta el destino real. Pide el enlace completo o entra escribiendo el dominio a mano."],
+  [/\b(0x[a-f0-9]{6,}|bc1[a-z0-9]{6,}|usdt|binance|cripto|criptomoneda|bitcoin)\b/i,"Piden criptomonedas","Ninguna organización humanitaria colombiana está recaudando en cripto para esta emergencia. Una transferencia en cripto es irreversible."],
+  [/\b(c[oó]digo de verificaci[oó]n|clave din[aá]mica|otp|no compartas este c[oó]digo|c[oó]digo que te lleg[oó])\b/i,"Piden un código de verificación o clave","Nadie necesita tu OTP para recibir una donación. Esto es toma de cuenta, no recaudo."],
+  [/(reenv[ií]a|comparte este mensaje|env[ií]alo a \d+|difunde a todos tus contactos|cadena)/i,"Pide reenvío masivo","Las cadenas son el vehículo típico de las estafas: propagan más rápido de lo que se pueden desmentir."],
+  [/\b(urgente|urgen|[uú]ltimas horas|solo hoy|antes de que|se acaba el tiempo|ya mismo)\b/i,"Presión de urgencia","Por sí sola no significa fraude en una emergencia real, pero combinada con otras señales es el patrón clásico para que no verifiques."],
+  [/\b(gana|premio|sorteo|multiplicamos tu|te devolvemos|rentabilidad|inversi[oó]n)\b/i,"Ofrece un retorno o premio","Una donación no paga rendimientos. Si prometen devolverte algo, no es una donación."],
+  [/\b(giro|western union|moneygram|recarga)\b/i,"Piden giro o recarga","Los giros internacionales a personas naturales no son trazables ni reembolsables."]
+];
+
+/* ============ UTILIDADES ============ */
+const $ = s => document.querySelector(s);
+const digits = s => (s||"").replace(/\D/g,"");
+const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"");
+
+function lev(a,b){
+  const m=a.length,n=b.length;
+  if(Math.abs(m-n)>3) return 99;
+  let prev=Array.from({length:n+1},(_,i)=>i);
+  for(let i=1;i<=m;i++){
+    const cur=[i];
+    for(let j=1;j<=n;j++){
+      cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    }
+    prev=cur;
+  }
+  return prev[n];
+}
+
+/* dígito de verificación del NIT, algoritmo DIAN */
+function nitOk(raw){
+  const c=digits(raw);
+  if(c.length<6||c.length>16) return null;
+  const dv=+c.slice(-1), base=c.slice(0,-1);
+  const W=[3,7,13,17,19,23,29,37,41,43,47,53,59,67,71];
+  let s=0;
+  for(let i=0;i<base.length;i++) s+=(+base[base.length-1-i])*W[i];
+  const r=s%11;
+  return dv===(r<2?r:11-r);
+}
+
+function host(u){
+  try{ return new URL(u.startsWith("http")?u:"https://"+u).hostname.replace(/^www\./,"").toLowerCase(); }
+  catch(e){ return null; }
+}
+function isSameSite(h,d){ return h===d||h.endsWith("."+d); }
+
+/* firma de la herramienta: comparación dígito a dígito */
+function diffHTML(a,b){
+  let out="";
+  const n=Math.max(a.length,b.length);
+  for(let i=0;i<n;i++){
+    const ca=a[i]??"", cb=b[i]??"";
+    out+= ca===cb ? esc(ca) : "<b>"+esc(ca||"·")+"</b>";
+  }
+  return out;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ============ ANÁLISIS ============ */
+function analyze(text){
+  const hits=[];     // coincidencias exactas contra datos "oficial"
+  const reported=[]; // coincidencias exactas contra datos "press" (no confirmados por la organización)
+  const alerts=[]; // riesgo alto
+  const notes=[];  // observaciones
+
+  const t=text.trim();
+  if(!t) return null;
+
+  const nt = norm(t);
+  const numbers = [...t.matchAll(/\d[\d .\-]{6,}\d/g)].map(m=>digits(m[0])).filter(n=>n.length>=7);
+  const urls = [...t.matchAll(/(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?/gi)].map(m=>m[0]);
+  const emails = [...t.matchAll(/[\w.+-]+@[\w-]+\.[\w.]+/g)].map(m=>m[0].toLowerCase());
+  const shortKey = t.length<=40 && !/\s/.test(t) ? norm(t) : null;
+
+  /* --- cuentas y llaves --- */
+  ORGS.forEach(o=>{
+    o.pay.forEach(([type,val,status])=>{
+      const isOficial = status==="oficial";
+      const bucket = isOficial ? hits : reported;
+      const vd=digits(val), vn=norm(val);
+      if(vd.length>=7){
+        if(numbers.includes(vd)) bucket.push(`${type} de <strong>${esc(o.name)}</strong>`);
+        else numbers.forEach(n=>{
+          const d=lev(n,vd);
+          if(d>0&&d<=2&&Math.abs(n.length-vd.length)<=1)
+            alerts.push({k:"near",label:"Una cuenta casi idéntica a la oficial",
+              why:`Difiere en ${d} ${d===1?"dígito":"dígitos"} de la ${type.toLowerCase()} de ${o.name}. Es el fraude más frecuente tras un desastre: copian el mensaje real y cambian un número.`,
+              a:n,b:vd,aL:"En tu mensaje",bL:type+" oficial"});
+        });
+      }
+      if(/bre-b|llave/i.test(type)&&!/^\d+$/.test(vn)){
+        if(nt.includes(vn)||shortKey===vn) bucket.push(`Llave Bre-B de <strong>${esc(o.name)}</strong>`);
+      }
+      if(val.includes("@")&&emails.includes(val.toLowerCase())) bucket.push(`Correo de <strong>${esc(o.name)}</strong>`);
+    });
+  });
+
+  /* --- dominios --- */
+  urls.forEach(u=>{
+    const h=host(u); if(!h) return;
+    let matched=false, impersonates=null;
+    ORGS.forEach(o=>{
+      if(o.domains.some(d=>isSameSite(h,d))){ matched=true; hits.push(`Dominio oficial de <strong>${esc(o.name)}</strong> (${esc(h)})`); }
+      else if(o.keywords.some(k=>h.replace(/[-.]/g,"").includes(k))) impersonates=o;
+    });
+    if(!matched&&impersonates){
+      alerts.push({k:"dom",label:`El dominio <span style="font-family:var(--mono)">${esc(h)}</span> usa el nombre de ${esc(impersonates.name.split("—")[0].trim())} pero no es su dominio`,
+        why:`El dominio real es ${impersonates.domains.join(" o ")}. Escríbelo tú en la barra de direcciones en vez de hacer clic.`});
+    }
+  });
+
+  /* --- NIT --- */
+  const nitM=t.match(/nit[:\s.]*([\d.\-]{7,20})/i);
+  if(nitM){
+    const ok=nitOk(nitM[1]);
+    if(ok===false) alerts.push({k:"nit",label:"El NIT no pasa el dígito de verificación",
+      why:"El último dígito de un NIT se calcula con una fórmula de la DIAN. Si no cuadra, ese NIT no existe: está inventado o mal copiado."});
+    if(ok===true) notes.push("El NIT tiene un dígito de verificación válido. Eso significa que el número está bien formado, no que la entidad sea la que dice ser.");
+  } else if(t.length>120 && numbers.length){
+    notes.push("El mensaje no menciona un NIT. Una organización formal siempre lo da: pídelo y búscalo en el RUES.");
+  }
+
+  /* --- celular como destino --- */
+  const cel = numbers.find(n=>n.length===10&&n.startsWith("3"));
+  if(cel&&/nequi|daviplata|transfiere|cuenta|env[ií]a/i.test(t))
+    alerts.push({k:"cel",label:"El destino es un número de celular",
+      why:"Nequi y Daviplata a un celular personal van a una persona natural, no a una entidad. No hay recibo, ni auditoría, ni forma de reversar."});
+
+  /* --- patrones de texto --- */
+  TEXT_FLAGS.forEach(([re,label,why])=>{ if(re.test(t)) alerts.push({k:"txt",label,why}); });
+
+  return {hits,reported,alerts,notes,hasNumbers:numbers.length>0||urls.length>0};
+}
+
+/* ============ VEREDICTO ============ */
+/* Función pura: separada de render() para poder probarla sin DOM (ver tests/run.js). */
+function veredicto(r){
+  const near=r.alerts.find(a=>a.k==="near");
+  let tone,title,note;
+
+  if(near||r.alerts.some(a=>["dom","nit","cel"].includes(a.k))||r.alerts.length>=3){
+    tone="rojo"; title="No transfieras todavía";
+    note="Se encontraron señales fuertes de suplantación. Verifica en el sitio oficial de la organización antes de mover un peso.";
+  } else if(r.hits.length&&!r.alerts.length){
+    tone="azul"; title="Coincide con un canal publicado";
+    note="Los datos que pegaste son idénticos a los que la organización publicó. Aun así, ábrelo desde el sitio oficial: esta lista puede estar desactualizada.";
+  } else if(r.hits.length){
+    tone="amarillo"; title="Coincide, pero hay señales que revisar";
+    note="Los datos de pago cuadran con un canal publicado, pero el mensaje tiene patrones que suelen acompañar al fraude. Puede ser un mensaje real reenviado con ruido, o una copia con la cuenta cambiada más abajo.";
+  } else if(r.reported.length&&!r.alerts.length){
+    tone="amarillo"; title="Coincide con un dato reportado, no confirmado";
+    note="Este dato salió de prensa u otra fuente secundaria, no lo confirmamos letra por letra contra el sitio de la organización. No es una señal de alerta, pero tampoco es una confirmación: verifícalo en el sitio oficial antes de transferir.";
+  } else {
+    tone="amarillo"; title="No está en la lista";
+    note= r.hasNumbers
+      ? "Que no aparezca aquí no significa que sea una estafa: hay decenas de campañas locales honestas que ninguna lista alcanza a cubrir. Significa que la responsabilidad de verificar es tuya."
+      : "No se detectaron cuentas, llaves ni enlaces en lo que pegaste. Pega el mensaje completo o el dato de pago.";
+  }
+  return {tone,title,note,near};
+}
+
+/* ============ RENDER ============ */
+function render(r){
+  const out=$("#out");
+  if(!r){ out.innerHTML=""; return; }
+
+  const {tone,title,note,near}=veredicto(r);
+
+  let html=`<div class="verdict v-${tone}"><div class="bar"><span>${title}</span><span>${r.alerts.length} señal${r.alerts.length===1?"":"es"}</span></div><div class="bd"><p>${note}</p>`;
+
+  if(near) html+=`<div class="diff">
+      <div class="lbl">${esc(near.aL)}</div><div class="val">${diffHTML(near.a,near.b)}</div>
+      <div class="gap"></div>
+      <div class="lbl">${esc(near.bL)}</div><div class="val">${esc(near.b)}</div>
+    </div>`;
+
+  if(r.hits.length) html+=`<p><strong>Coincidencias exactas:</strong> ${[...new Set(r.hits)].join("; ")}.</p>`;
+  if(r.reported.length) html+=`<p><strong>Coincide con (sin confirmar):</strong> ${[...new Set(r.reported)].join("; ")}.</p>`;
+
+  if(r.alerts.length){
+    html+=`<ul class="flags">`+[...new Map(r.alerts.map(a=>[a.label,a])).values()]
+      .map(a=>`<li>${a.label}<em>${esc(a.why)}</em></li>`).join("")+`</ul>`;
+  }
+  if(r.notes.length) html+=`<p style="margin-top:12px;font-size:14px;color:var(--ink-70)">${r.notes.map(esc).join(" ")}</p>`;
+
+  if(tone!=="azul") html+=`<p style="margin-top:14px;font-size:14px"><strong>Cómo confirmar en dos minutos:</strong> escribe el dominio de la organización a mano (no des clic), busca ahí la sección de donaciones y compara la cuenta dígito por dígito. Si te llegó por WhatsApp o lo viste en una red social, pregúntale a quien lo compartió de dónde lo sacó.</p>`;
+
+  html+=`</div></div>`;
+  out.innerHTML=html;
+  out.querySelector(".verdict").setAttribute("tabindex","-1");
+  out.querySelector(".verdict").focus({preventScroll:true});
+}
+
+/* ============ DIRECTORIO ============ */
+function pintar(){
+$("#dir").innerHTML = ORGS.map(o=>`
+  <article class="org">
+    <h3>${esc(o.name)}</h3>
+    ${o.nit?`<div class="nit">NIT ${esc(o.nit)} · dígito de verificación ${nitOk(o.nit)?"correcto":"sin confirmar"}</div>`:""}
+    <p class="what">${esc(o.what)}</p>
+    ${o.links.map(([l,h])=>`<p style="margin:0 0 6px"><a href="${h}" target="_blank" rel="noopener">${esc(l)} ↗</a></p>`).join("")}
+    ${o.pay.map(([t,,c])=>`<div class="pay"><span class="t">${esc(t)}</span><span class="tag ${c==="press"?"press":""}">${c==="press"?"reportado, sin confirmar":"oficial, verificado"}</span></div>`).join("")}
+    ${o.nodata?`<p class="what" style="margin-top:12px">${esc(o.nodata)}</p>`:""}
+    <p class="src">Fuente: ${o.src[1]?`<a href="${o.src[1]}" target="_blank" rel="noopener">${esc(o.src[0])}</a>`:esc(o.src[0])}</p>
+  </article>`).join("");
+
+pintarAcopio($("#buscar-acopio")?.value || "");
+
+}
+
+function pintarAcopio(filtro){
+  const f = norm(filtro);
+  const lista = f ? ACOPIO.filter(([c])=>norm(c).includes(f)) : ACOPIO;
+  $("#acopio").innerHTML = lista.length
+    ? lista.map(([c,d])=>`<article class="org"><h3>${esc(c)}</h3><p class="what" style="margin-bottom:0">${esc(d)}</p></article>`).join("")
+    : `<article class="org"><h3>Sin resultados para "${esc(filtro)}"</h3><p class="what" style="margin-bottom:0">No tenemos un punto de acopio confirmado para esa ciudad o pueblo todavía. Antes de moverte, llama a la Alcaldía o a la Cruz Roja local para confirmar un lugar habilitado, o dona directamente por los canales oficiales de arriba (Bre-B / cuenta) — llegan igual, sin que tengas que desplazarte.</p></article>`;
+}
+
+/* ============ FRESCURA Y CARGA REMOTA ============ */
+const FUENTE_DATOS = "datos.json";   // apunta esto al JSON que actualice n8n
+
+function avisoFrescura(){
+  const el = $("#frescura");
+  const horas = (Date.now() - new Date(VERIFICADO_EL).getTime()) / 36e5;
+  if(isNaN(horas)) return;
+
+  let tono, texto;
+  if(ORIGEN==="respaldo"){
+    tono="amarillo";
+    texto="No se pudo cargar la lista actualizada. Estás viendo una copia guardada del 11 de agosto: confirma cada dato en el sitio oficial antes de transferir.";
+  } else if(horas>24){
+    tono="rojo";
+    texto=`Esta lista no se revisa desde hace ${Math.floor(horas)} horas. En una emergencia los canales cambian a diario: no transfieras sin confirmar en el sitio oficial de la organización.`;
+  } else if(horas>6){
+    tono="amarillo";
+    texto=`Última revisión hace ${Math.floor(horas)} horas.`;
+  } else {
+    tono="azul";
+    texto=`Última revisión hace ${horas<1?"menos de una hora":Math.floor(horas)+" horas"}.`;
+  }
+
+  const c = {rojo:"var(--rojo)",amarillo:"var(--amarillo)",azul:"var(--azul)"}[tono];
+  el.innerHTML = `<p style="margin:20px 0 0;padding:11px 14px;border-left:4px solid ${c};
+    background:var(--card);font-size:14px;color:var(--ink-70)">
+    <strong style="color:${c};font-family:var(--disp);font-variation-settings:'wdth' 80,'wght' 750;
+    text-transform:uppercase;font-size:11px;letter-spacing:.09em;display:block;margin-bottom:3px">
+    ${tono==="azul"?"Al día":"Revisa antes de transferir"}</strong>${texto}</p>`;
+}
+
+async function cargar(){
+  try{
+    const r = await fetch(FUENTE_DATOS + "?t=" + Date.now(), {cache:"no-store"});
+    if(!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if(!Array.isArray(d.orgs) || !d.orgs.length) throw new Error("vacío");
+    ORGS = d.orgs;
+    ACOPIO = Array.isArray(d.acopio) ? d.acopio : ACOPIO_EMBEBIDO;
+    VERIFICADO_EL = d.meta?.verificado_el || VERIFICADO_EL;
+    ORIGEN = "remoto";
+  }catch(e){
+    ORIGEN = "respaldo";   // se queda con el respaldo embebido
+  }
+  pintar();
+  avisoFrescura();
+}
+cargar();
+
+/* ============ EVENTOS ============ */
+$("#go").addEventListener("click",()=>render(analyze($("#in").value)));
+$("#clr").addEventListener("click",()=>{$("#in").value="";$("#out").innerHTML="";$("#in").focus();});
+$("#in").addEventListener("keydown",e=>{ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") render(analyze($("#in").value)); });
+$("#buscar-acopio").addEventListener("input",e=>pintarAcopio(e.target.value));
+</script>

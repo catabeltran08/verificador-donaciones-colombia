@@ -1,0 +1,73 @@
+[
+  {
+    "nombre": "Cuenta oficial exacta de ABACO (cuenta corriente)",
+    "input": "15264342372",
+    "tone": "azul"
+  },
+  {
+    "nombre": "Llave Bre-B oficial de ABACO",
+    "input": "0090989753",
+    "tone": "azul"
+  },
+  {
+    "nombre": "Llave Bre-B oficial de Banco de Alimentos de Bogotá",
+    "input": "0091677852",
+    "tone": "azul"
+  },
+  {
+    "nombre": "Cuenta oficial de ABACO con un dígito cambiado (suplantación clásica)",
+    "input": "15264342371",
+    "tone": "rojo",
+    "near": true
+  },
+  {
+    "nombre": "Dominio oficial de ABACO",
+    "input": "Dona ya en https://donahoy.abaco.org.co/colombia2026",
+    "tone": "azul"
+  },
+  {
+    "nombre": "Dominio impostor que usa el nombre de Cruz Roja",
+    "input": "Dona en https://cruzroja-donaciones.co ahora mismo",
+    "tone": "rojo"
+  },
+  {
+    "nombre": "NIT con dígito de verificación inválido",
+    "input": "Somos una fundación seria, NIT 900326456-9",
+    "tone": "rojo"
+  },
+  {
+    "nombre": "NIT válido de ABACO (dato informativo, no debe alarmar)",
+    "input": "Dona a nuestra fundación, NIT 900326456-1",
+    "tone": "amarillo"
+  },
+  {
+    "nombre": "Dato reportado por prensa, no confirmado oficialmente (línea Cruz Roja)",
+    "input": "6014376300",
+    "tone": "amarillo"
+  },
+  {
+    "nombre": "Campaña de barrio legítima y desconocida (no debe salir roja)",
+    "input": "Ayuda para la vereda El Guayabo: cuenta de ahorros Bancolombia 71234567890 a nombre de la Junta de Acción Comunal de El Guayabo.",
+    "tone": "amarillo"
+  },
+  {
+    "nombre": "Cuenta totalmente desconocida, sin parecido a ninguna oficial",
+    "input": "99912345678",
+    "tone": "amarillo"
+  },
+  {
+    "nombre": "Cuenta personal Nequi como destino (patrón de fraude)",
+    "input": "Envía tu ayuda a este Nequi 3011234567",
+    "tone": "rojo"
+  },
+  {
+    "nombre": "Un solo patrón sospechoso no basta para rojo (necesita 3, o ser dominio/NIT/celular)",
+    "input": "Para confirmar tu donación mándanos el código de verificación que te llegó por SMS",
+    "tone": "amarillo"
+  },
+  {
+    "nombre": "Mensaje con link acortado y cadena de reenvío",
+    "input": "URGENTE reenvía a todos tus contactos, dona aquí: bit.ly/ayudaXYZ",
+    "tone": "rojo"
+  }
+]
