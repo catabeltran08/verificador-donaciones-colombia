@@ -111,6 +111,30 @@ function main(){
   if(tasa < 0.05){ console.log('✓ Tasa de falsas alarmas dentro del umbral documentado (<0,05%)'); ok++; }
   else { console.log('✗ FALLÓ  Tasa de falsas alarmas por encima del umbral documentado — revisa los umbrales de Levenshtein'); fail++; }
 
+  /* --- pendientes.json: una candidata sin verificar NUNCA puede dar azul --- */
+  /* Ver CLAUDE.md sección 5b — es la Regla 5 (cuarentena) aplicada a organizaciones enteras. */
+  vm.runInContext(
+    `PENDIENTES.push({ nombre: "Fundación de Prueba", dominio: "fundaciondeprueba.org", ` +
+    `estado: "candidata_sin_revisar", detectado_el: "2026-08-11T12:00:00.000Z", fuente: {} });`,
+    ctx
+  );
+  const rPendiente = ctx.analyze('https://www.fundaciondeprueba.org/dona');
+  const vPendiente = ctx.veredicto(rPendiente);
+  if(vPendiente.tone !== 'azul' && rPendiente.notes.some(n => n.includes('Fundación de Prueba'))){
+    ok++; console.log('✓ Una candidata pendiente da amarillo con nota, nunca azul');
+  } else {
+    fail++;
+    console.log('✗ FALLÓ  Una organización sin verificar no debería poder dar azul');
+    console.log(`   obtenido: tone=${vPendiente.tone}, notes=${JSON.stringify(rPendiente.notes)}`);
+  }
+  const rDesconocido = ctx.analyze('https://www.otra-fundacion-cualquiera.org/dona');
+  if(ctx.veredicto(rDesconocido).tone !== 'azul'){
+    ok++;
+  } else {
+    fail++;
+    console.log('✗ FALLÓ  Un dominio totalmente desconocido no debería poder dar azul');
+  }
+
   console.log(`\n${fail===0 ? '✓ TODO OK' : `✗ ${fail} prueba(s) fallaron`}`);
   process.exit(fail===0 ? 0 : 1);
 }

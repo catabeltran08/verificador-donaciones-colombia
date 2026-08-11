@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "nota": "Cola de organizaciones candidatas detectadas en prensa por n8n/workflow-descubrimiento.json. NUNCA se promueven solas a datos.json — un humano debe verificar el dominio a mano (mismo proceso del Paso 1 de CLAUDE.md) antes de moverlas ahí. Este archivo no le da ningún veredicto azul a nadie."
+  },
+  "candidatas": []
+}

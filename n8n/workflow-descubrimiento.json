@@ -1,0 +1,271 @@
+{
+  "name": "Verificador donaciones — descubrimiento de organizaciones",
+  "nodes": [
+    {
+      "id": "nota-limite",
+      "name": "Nota: esto NUNCA publica un veredicto",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-480, -420],
+      "parameters": {
+        "width": 480,
+        "height": 340,
+        "content": "## Qué hace y qué NO hace este workflow\n\nBusca en prensa organizaciones que reciben donaciones y las deja en `pendientes.json` como `candidata_sin_revisar`. **Nunca** toca `datos.json`, nunca les da veredicto azul, nunca aprueba nada solo.\n\nPara promover una candidata a oficial: sigue el Paso 1 de CLAUDE.md EXACTO — visita su dominio a mano, verifica el dato de pago carácter por carácter en el sitio real, y solo entonces añádela a `datos.json` tú mismo. Nunca copies `pendientes.json` directo a `datos.json`.\n\nEsto es un workflow *separado* de `workflow.json` (el de verificación de pagos) — tienen propósitos y frecuencias distintas."
+      }
+    },
+    {
+      "id": "nota-config",
+      "name": "Nota: qué configurar antes de activar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-480, -60],
+      "parameters": {
+        "width": 480,
+        "height": 280,
+        "content": "## Antes de activar\n\n1. Credencial de **GitHub** (mismo PAT que el otro workflow) en los 3 nodos GitHub.\n2. Credencial de **Anthropic** en \"Preguntarle a Claude\".\n3. `owner`/`repository` en los nodos GitHub.\n4. URL real de **healthchecks.io** en el último nodo (usa un UUID *distinto* al del otro workflow, para saber cuál de los dos se cayó).\n5. Corre manualmente una vez y revisa `pendientes.json` en GitHub antes de activar el Schedule Trigger.\n\nProbado con el RSS real de Google Noticias y con datos reales de `datos.json`, pero sin una instancia real de n8n — al importar, revisa que los parámetros de cada nodo sigan completos."
+      }
+    },
+    {
+      "id": "trigger",
+      "name": "Cada lunes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-480, 320],
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "weeks", "weeksInterval": 1, "triggerAtDay": [1], "triggerAtHour": 8 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "leer-datos-json",
+      "name": "Leer datos.json",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [-220, 200],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": "TU-USUARIO-DE-GITHUB",
+        "repository": "verificador-donaciones-colombia",
+        "filePath": "datos.json"
+      },
+      "credentials": { "githubApi": { "id": "PLACEHOLDER", "name": "GitHub — verificador" } }
+    },
+    {
+      "id": "extraer-oficiales",
+      "name": "Extraer dominios oficiales conocidos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [20, 200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').trim();\nconst file = $input.first().json;\nconst datos = JSON.parse(Buffer.from(file.content, 'base64').toString('utf8'));\n\nconst dominios = [], nombres = [];\nfor (const o of datos.orgs) {\n  (o.domains || []).forEach(d => dominios.push(norm(d)));\n  nombres.push(norm(o.name.split('—')[0]));\n}\nreturn [{ json: { dominiosConocidos: dominios, nombresConocidos: nombres } }];\n"
+      }
+    },
+    {
+      "id": "leer-pendientes-json",
+      "name": "Leer pendientes.json",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [260, 200],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": "TU-USUARIO-DE-GITHUB",
+        "repository": "verificador-donaciones-colombia",
+        "filePath": "pendientes.json"
+      },
+      "credentials": { "githubApi": { "id": "PLACEHOLDER", "name": "GitHub — verificador" } }
+    },
+    {
+      "id": "combinar-conocidos",
+      "name": "Combinar conocidos y candidatas en cola",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').trim();\nconst limpioDominio = d => norm(d).replace(/^https?:\\/\\//, '').replace(/^www\\./, '').replace(/\\/.*$/, '');\n\nconst oficiales = $('Extraer dominios oficiales conocidos').first().json;\nconst file = $input.first().json;\nconst pend = JSON.parse(Buffer.from(file.content, 'base64').toString('utf8'));\nconst actuales = pend.candidatas || [];\n\nconst dominiosEnCola = actuales.map(c => limpioDominio(c.dominio)).filter(Boolean);\nconst nombresEnCola = actuales.map(c => norm(c.nombre)).filter(Boolean);\n\nreturn [{\n  json: {\n    dominiosConocidos: [...oficiales.dominiosConocidos, ...dominiosEnCola],\n    nombresConocidos: [...oficiales.nombresConocidos, ...nombresEnCola],\n    pendientesActuales: actuales,\n    pendientesSha: file.sha,\n    pendMeta: pend.meta || {},\n  }\n}];\n"
+      }
+    },
+    {
+      "id": "buscar-rss",
+      "name": "Buscar en Google Noticias",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, 200],
+      "parameters": {
+        "method": "GET",
+        "url": "https://news.google.com/rss/search?q=fundaci%C3%B3n%20OR%20ONG%20OR%20%22banco%20de%20alimentos%22%20donaciones%20terremoto%20Colombia&hl=es-419&gl=CO&ceid=CO:es-419",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "User-Agent", "value": "Mozilla/5.0 (compatible; VerificadorDonacionesBot/1.0)" }] },
+        "options": { "response": { "response": { "fullResponse": true, "responseFormat": "text" } }, "timeout": 15000 }
+      }
+    },
+    {
+      "id": "expandir-articulos",
+      "name": "Expandir artículos candidatos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [980, 200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Se parsea el XML a mano con regex (sin depender del nodo XML de n8n, cuyo\n// formato de salida exacto no se pudo confirmar sin una instancia real). Probado\n// contra el RSS real de Google Noticias antes de empacar esto — ver commit.\nconst conocidosInfo = $('Combinar conocidos y candidatas en cola').first().json;\nconst xml = $input.first().json.body;\n\nconst bloques = [...xml.matchAll(/<item>([\\s\\S]*?)<\\/item>/g)].map(m => m[1]);\nconst items = bloques.map(b => {\n  const titulo = (b.match(/<title>([\\s\\S]*?)<\\/title>/) || [, ''])[1];\n  const link = (b.match(/<link>([\\s\\S]*?)<\\/link>/) || [, ''])[1];\n  const pubDate = (b.match(/<pubDate>([\\s\\S]*?)<\\/pubDate>/) || [, ''])[1];\n  const fuenteMatch = b.match(/<source url=\"([^\"]*)\">([\\s\\S]*?)<\\/source>/);\n  return {\n    tituloArticulo: titulo,\n    linkGoogleNews: link,\n    fecha: pubDate,\n    fuenteNombre: fuenteMatch ? fuenteMatch[2] : null,\n    fuenteUrl: fuenteMatch ? fuenteMatch[1] : null,\n  };\n});\n\n// No martillar sitios de prensa ni gastar de más en Claude en una sola corrida\n// (CLAUDE.md sección 5: 'no martilles los servidores').\nconst MAX_POR_CORRIDA = 15;\n\nreturn items.slice(0, MAX_POR_CORRIDA).map(it => ({\n  json: { ...it, dominiosConocidos: conocidosInfo.dominiosConocidos, nombresConocidos: conocidosInfo.nombresConocidos }\n}));\n"
+      }
+    },
+    {
+      "id": "descargar-articulo",
+      "name": "Descargar artículo real",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1220, 200],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.linkGoogleNews }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "User-Agent", "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" }] },
+        "options": { "redirect": { "redirect": { "followRedirects": true } }, "response": { "response": { "fullResponse": true, "neverError": true } }, "timeout": 15000 }
+      }
+    },
+    {
+      "id": "extraer-texto-articulo",
+      "name": "Extraer texto del artículo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1460, 200],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const origen = $('Expandir artículos candidatos').item.json;\nconst resp = $input.item.json;\nconst ok = !resp.error && resp.statusCode >= 200 && resp.statusCode < 300;\nconst html = ok ? (typeof resp.body === 'string' ? resp.body : JSON.stringify(resp.body)) : '';\nconst textoPlano = html\n  .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n  .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nreturn { json: { ...origen, textoPlano: textoPlano.slice(0, 12000), fetchOk: ok && textoPlano.length > 200 } };\n"
+      }
+    },
+    {
+      "id": "pedir-claude",
+      "name": "Preguntarle a Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1700, 200],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "anthropic-version", "value": "2023-06-01" }, { "name": "content-type", "value": "application/json" }] },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 512, temperature: 0, system: 'Eres un notario de datos. Lee el texto de una noticia y di si menciona alguna organización (fundación, ONG, banco de alimentos, iglesia, empresa) que esté recibiendo o coordinando donaciones para los afectados del terremoto en Colombia. Copia el nombre y el dominio/sitio web EXACTAMENTE como aparecen en el texto, sin corregir ni completar nada. Si el texto no menciona un sitio web para esa organización, deja el dominio en null. Si no se menciona ninguna organización así, responde []. Responde SOLO con un array JSON de objetos {nombre, dominio}, sin explicación.', messages: [{ role: 'user', content: $json.textoPlano }] }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "credentials": { "httpHeaderAuth": { "id": "PLACEHOLDER", "name": "Anthropic API" } }
+    },
+    {
+      "id": "combinar-respuesta-claude",
+      "name": "Combinar con artículo original",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1940, 200],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const origen = $('Extraer texto del artículo').item.json;\nconst respuestaClaude = $input.item.json;\nreturn { json: { ...origen, respuestaClaude } };\n"
+      }
+    },
+    {
+      "id": "corroborar-candidatas",
+      "name": "CORROBORAR y preparar candidatas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2180, 200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Regla 3 aplicada al descubrimiento: el nombre y el dominio propuestos por\n// Claude deben aparecer literalmente en el texto REAL del artículo descargado.\n// Si no, se descartan sin más — nunca se pone en cola algo que pudo inventarse.\nconst norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').trim();\nconst limpioDominio = d => norm(d).replace(/^https?:\\/\\//, '').replace(/^www\\./, '').replace(/\\/.*$/, '');\n\nconst conocidosInfo = $('Combinar conocidos y candidatas en cola').first().json;\nconst items = $input.all().map(it => it.json);\nconst nuevas = [];\nconst vistasEnEstaCorrida = new Set();\n\nfor (const j of items) {\n  if (!j.fetchOk) continue;\n\n  let extraidos = [];\n  try {\n    const resp = j.respuestaClaude;\n    const texto = (resp && resp.content && resp.content[0] && resp.content[0].text) || '[]';\n    extraidos = JSON.parse(texto);\n    if (!Array.isArray(extraidos)) extraidos = [];\n  } catch (e) { extraidos = []; }\n\n  for (const c of extraidos) {\n    if (!c || !c.nombre) continue;\n    const nombreNorm = norm(c.nombre);\n    const dominioNorm = c.dominio ? limpioDominio(c.dominio) : null;\n\n    const textoNorm = norm(j.textoPlano);\n    const nombreCorrobora = textoNorm.includes(nombreNorm);\n    const dominioCorrobora = dominioNorm ? textoNorm.includes(dominioNorm) : true;\n    if (!nombreCorrobora || !dominioCorrobora) continue;\n\n    if (dominioNorm && conocidosInfo.dominiosConocidos.includes(dominioNorm)) continue;\n    if (!dominioNorm && conocidosInfo.nombresConocidos.includes(nombreNorm)) continue;\n\n    const clave = dominioNorm || nombreNorm;\n    if (vistasEnEstaCorrida.has(clave)) continue;\n    vistasEnEstaCorrida.add(clave);\n\n    nuevas.push({\n      nombre: c.nombre,\n      dominio: c.dominio || null,\n      estado: 'candidata_sin_revisar',\n      detectado_el: new Date().toISOString(),\n      fuente: { titulo: j.tituloArticulo, url: j.linkGoogleNews, publicacion: j.fuenteNombre, fecha: j.fecha },\n    });\n  }\n}\n\nreturn [{ json: { nuevasCandidatas: nuevas, pendientesActuales: conocidosInfo.pendientesActuales, pendientesSha: conocidosInfo.pendientesSha, pendMeta: conocidosInfo.pendMeta } }];\n"
+      }
+    },
+    {
+      "id": "fusionar-pendientes",
+      "name": "Fusionar con pendientes.json",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, 200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Regla 4: solo se añade, nunca se borra ni se sobrescribe una candidata existente.\nconst info = $input.first().json;\nconst todas = [...info.pendientesActuales, ...info.nuevasCandidatas];\n\nreturn [{\n  json: {\n    contenidoNuevo: JSON.stringify({ meta: info.pendMeta, candidatas: todas }, null, 2),\n    pendientesSha: info.pendientesSha,\n    hayNuevas: info.nuevasCandidatas.length > 0,\n    cantidadNuevas: info.nuevasCandidatas.length,\n    nombresNuevas: info.nuevasCandidatas.map(c => c.nombre),\n  }\n}];\n"
+      }
+    },
+    {
+      "id": "if-hay-nuevas",
+      "name": "¿Hay candidatas nuevas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2660, 200],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "combinator": "and",
+          "conditions": [
+            { "id": "cond-hay", "leftValue": "={{ $json.hayNuevas }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
+          ]
+        }
+      }
+    },
+    {
+      "id": "escribir-pendientes",
+      "name": "Escribir pendientes.json",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [2900, 120],
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": "TU-USUARIO-DE-GITHUB",
+        "repository": "verificador-donaciones-colombia",
+        "filePath": "pendientes.json",
+        "fileContent": "={{ $json.contenidoNuevo }}",
+        "commitMessage": "={{ 'n8n: ' + $json.cantidadNuevas + ' candidata(s) nueva(s) detectada(s) en prensa — ' + $json.nombresNuevas.join(', ') }}",
+        "additionalParameters": { "branch": { "branch": "main" } }
+      },
+      "credentials": { "githubApi": { "id": "PLACEHOLDER", "name": "GitHub — verificador" } }
+    },
+    {
+      "id": "healthcheck",
+      "name": "Avisar que el descubrimiento sigue vivo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2900, 320],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "https://hc-ping.com/PEGA-AQUI-OTRO-UUID-DISTINTO-AL-DEL-OTRO-WORKFLOW",
+        "options": { "timeout": 10000 }
+      }
+    }
+  ],
+  "connections": {
+    "Cada lunes": { "main": [[{ "node": "Leer datos.json", "type": "main", "index": 0 }]] },
+    "Leer datos.json": { "main": [[{ "node": "Extraer dominios oficiales conocidos", "type": "main", "index": 0 }]] },
+    "Extraer dominios oficiales conocidos": { "main": [[{ "node": "Leer pendientes.json", "type": "main", "index": 0 }]] },
+    "Leer pendientes.json": { "main": [[{ "node": "Combinar conocidos y candidatas en cola", "type": "main", "index": 0 }]] },
+    "Combinar conocidos y candidatas en cola": { "main": [[{ "node": "Buscar en Google Noticias", "type": "main", "index": 0 }]] },
+    "Buscar en Google Noticias": { "main": [[{ "node": "Expandir artículos candidatos", "type": "main", "index": 0 }]] },
+    "Expandir artículos candidatos": { "main": [[{ "node": "Descargar artículo real", "type": "main", "index": 0 }]] },
+    "Descargar artículo real": { "main": [[{ "node": "Extraer texto del artículo", "type": "main", "index": 0 }]] },
+    "Extraer texto del artículo": { "main": [[{ "node": "Preguntarle a Claude", "type": "main", "index": 0 }]] },
+    "Preguntarle a Claude": { "main": [[{ "node": "Combinar con artículo original", "type": "main", "index": 0 }]] },
+    "Combinar con artículo original": { "main": [[{ "node": "CORROBORAR y preparar candidatas", "type": "main", "index": 0 }]] },
+    "CORROBORAR y preparar candidatas": { "main": [[{ "node": "Fusionar con pendientes.json", "type": "main", "index": 0 }]] },
+    "Fusionar con pendientes.json": { "main": [[{ "node": "¿Hay candidatas nuevas?", "type": "main", "index": 0 }]] },
+    "¿Hay candidatas nuevas?": {
+      "main": [
+        [{ "node": "Escribir pendientes.json", "type": "main", "index": 0 }],
+        [{ "node": "Avisar que el descubrimiento sigue vivo", "type": "main", "index": 0 }]
+      ]
+    },
+    "Escribir pendientes.json": { "main": [[{ "node": "Avisar que el descubrimiento sigue vivo", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" }
+}

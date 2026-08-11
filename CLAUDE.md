@@ -139,14 +139,16 @@ puedes abrir con doble clic y funciona.
 
 ```
 verificador/
-├── CLAUDE.md          ← este archivo
-├── index.html         ← la página entera: HTML + CSS + JS en un solo archivo
-├── datos.json         ← la lista de organizaciones (n8n escribe aquí)
+├── CLAUDE.md                        ← este archivo
+├── index.html                       ← la página entera: HTML + CSS + JS en un solo archivo
+├── datos.json                       ← la lista de organizaciones OFICIALES (n8n escribe aquí)
+├── pendientes.json                  ← candidatas detectadas en prensa, sin verificar (ver 5b)
 ├── tests/
-│   └── casos.json     ← entradas de prueba y veredictos esperados
-│   └── run.js         ← corre las pruebas
+│   ├── casos.json                   ← entradas de prueba y veredictos esperados
+│   └── run.js                       ← corre las pruebas
 └── n8n/
-    └── workflow.json  ← el flujo de automatización
+    ├── workflow.json                ← verifica los datos de pago de las orgs ya conocidas
+    └── workflow-descubrimiento.json ← busca en prensa organizaciones NUEVAS (ver 5b)
 ```
 
 **Por qué un solo HTML y no React:** en una emergencia, lo que importa es que cargue
@@ -357,6 +359,59 @@ descargan contenido.
 **El fallo silencioso.** Si n8n muere, nadie te avisa. Usa healthchecks.io: n8n le
 hace ping en cada corrida exitosa, y si deja de llegar, te manda un correo. Sin eso,
 tu página se congela en silencio.
+
+---
+
+## 5b. El descubrimiento de organizaciones nuevas (n8n, segundo workflow)
+
+### Por qué existe
+
+El directorio solo cubre 4 organizaciones. Eso no significa que sean las únicas
+legítimas — hay decenas de fundaciones, bancos de alimentos locales y campañas
+reales que esta herramienta simplemente no conoce. `workflow-descubrimiento.json`
+busca en prensa menciones de organizaciones que estén recibiendo donaciones, y las
+deja en `pendientes.json` como candidatas.
+
+**Esto es un pipeline de descubrimiento, no de verificación.** No corrobora que la
+organización vaya a entregar el dinero — solo confirma que de verdad la menciona
+un artículo real, no que Claude se la inventó.
+
+### La frontera que nunca cruza
+
+`pendientes.json` es un archivo aparte de `datos.json`, y el workflow **nunca
+escribe en `datos.json`**. Una candidata entra con `"estado": "candidata_sin_revisar"`
+y ahí se queda hasta que un humano la promueve a mano. Promoverla significa repetir
+el Paso 1 exacto — visitar el dominio a mano, verificar el dato de pago carácter por
+carácter — y solo entonces copiarla a `datos.json`. Nunca se copia `pendientes.json`
+a `datos.json` directamente, ni con un script, ni "total ya está corroborado el
+nombre". El nombre corroborado no es lo mismo que el dato de pago corroborado.
+
+Esto es la Regla 5 (cuarentena) llevada un nivel más arriba: no es un campo de una
+organización conocida esperando confirmación, es la organización *entera* la que
+espera. `index.html` sabe leer `pendientes.json` y, si alguien pega el dominio de
+una candidata, le muestra una nota neutral ("la detectamos en prensa, no la hemos
+verificado") — pero esa nota vive en `notes`, nunca en `hits`, así que **no puede
+producir azul bajo ninguna circunstancia**. Revísalo en `analyze()` si alguna vez
+tocas esa función: si una candidata pendiente empieza a poder dar azul, es un bug
+de la columna dañina de la Regla 6.
+
+### De dónde saca las candidatas
+
+RUES (el registro de entidades sin ánimo de lucro de Colombia) es una aplicación de
+una sola página — no se puede raspar sin navegador headless, así que no se usa.
+En su lugar, el workflow busca en el RSS de Google Noticias (sin necesidad de login
+ni API key), sigue el enlace de cada artículo, y le pide a Claude que extraiga el
+nombre y el dominio de cualquier organización mencionada — con la misma disciplina
+de la Regla 3: el dato tiene que aparecer literal en el texto real del artículo
+descargado, o se descarta.
+
+### Frecuencia y límites
+
+Corre una vez por semana (los lunes), no cada 30 minutos — el panorama de ONG
+colombianas no cambia tan rápido como una cuenta bancaria. Por corrida se limita a
+15 artículos, para no gastar de más en llamadas a Claude ni martillar sitios de
+prensa. Tiene su propio ping a healthchecks.io, con un UUID distinto al del
+workflow de pagos, para poder distinguir cuál de los dos se cayó.
 
 ---
 
