@@ -31,7 +31,7 @@ function cargarLogica(){
   const contexto = {
     document: { querySelector: () => fakeEl() },
     fetch: () => Promise.reject(new Error('sin red en las pruebas — se usa el respaldo embebido')),
-    console, URL,
+    console, URL, setInterval, clearInterval,
   };
   vm.createContext(contexto);
   vm.runInContext(code, contexto, { filename: 'verificador-donaciones-colombia.html' });

@@ -157,7 +157,7 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
 
 <div class="wrap">
 <header>
-  <p class="eyebrow">Sismo 7,4 · Chocó · 10 ago 2026</p>
+  <p class="eyebrow">Colombia · Sismo 7,4 · Chocó · 10 ago 2026</p>
   <h1>¿A dónde<br>va tu plata?</h1>
   <p class="sub">Pega una cuenta, una llave Bre-B, un enlace o el mensaje completo que te llegó. Se compara contra los canales que las organizaciones publicaron oficialmente.</p>
   <p class="stamp">Verificación local · nada de lo que pegues sale de tu dispositivo</p>
@@ -274,7 +274,8 @@ const ACOPIO_EMBEBIDO = [
   ["Medellín","FUBAM: Cra 52 #30 A-97 · Fundación Saciar: Cra 50 #25-261"],
   ["Cali","Plazoleta Jairo Varela: Av. 2 Norte #10 Norte-1 · Fundación Arquidiocesana Banco de Alimentos: Cl 24 #6-103"],
   ["Manizales","El Banco de Alimentos de Manizales quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. Mientras tanto, la Alcaldía habilitó los coliseos Mayor y Menor como albergues, donde también reciben alimentos, agua, ropa y cobijas. Donación de sangre: cancha auxiliar junto a Bomberos Palogrande (detrás del Estadio Palogrande) y Hemocentro del Café. No verificamos estas ubicaciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía antes de desplazarte."],
-  ["Pereira","El Banco de Alimentos de Pereira quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. La Alcaldía reportó 7 puntos CAFE para donaciones ciudadanas: Consota (Villa Consota, Mz 7 y 8), Perla del Otún (diagonal a la iglesia de los 2.500 Lotes), El Remanso (junto al centro de salud del barrio), Kennedy (parque principal), Ormaza (Calle 3 bis), San Nicolás y Comuna del Café. No verificamos estas direcciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía de Pereira antes de desplazarte."]
+  ["Pereira","El Banco de Alimentos de Pereira quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. La Alcaldía reportó 7 puntos CAFE para donaciones ciudadanas: Consota (Villa Consota, Mz 7 y 8), Perla del Otún (diagonal a la iglesia de los 2.500 Lotes), El Remanso (junto al centro de salud del barrio), Kennedy (parque principal), Ormaza (Calle 3 bis), San Nicolás y Comuna del Café. No verificamos estas direcciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía de Pereira antes de desplazarte."],
+  ["Barranquilla","Oficina Distrital de Gestión del Riesgo: Cra 43 #6-120, sector Barranquillita (atención 24 horas). Reciben alimentos no perecederos, agua potable, insumos médicos, artículos de aseo y para bebés. Reportado por dos medios distintos, con cita textual de la Alcaldía; no lo verificamos dígito por dígito contra una fuente oficial."]
 ];
 
 /* Estado vivo: arranca con el respaldo y se sustituye si datos.json responde. */
@@ -568,6 +569,10 @@ async function cargar(){
   avisoFrescura();
 }
 cargar();
+// Si la pestaña se queda abierta, que no se congele: recarga datos.json y
+// recalcula el aviso de frescura solo, sin que haga falta recargar la página.
+// No depende de que n8n esté corriendo — funciona igual con el respaldo embebido.
+setInterval(cargar, 5*60*1000);
 
 /* ============ EVENTOS ============ */
 $("#go").addEventListener("click",()=>render(analyze($("#in").value)));
