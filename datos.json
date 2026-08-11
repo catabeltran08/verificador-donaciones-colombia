@@ -1,7 +1,7 @@
 {
   "meta": {
-    "verificado_el": "2026-08-11T09:00:00Z",
-    "revisado_por": "manual",
+    "verificado_el": "2026-08-11T14:14:12.149Z",
+    "revisado_por": "n8n",
     "nota": "Los campos de pago solo se modifican con aprobación humana. El resto puede actualizarse automáticamente."
   },
   "orgs": [
@@ -9,72 +9,175 @@
       "name": "ABACO — Asociación de Bancos de Alimentos de Colombia",
       "nit": "900326456-1",
       "what": "Corredor humanitario hacia Chocó, Valle del Cauca, Risaralda y Caldas: transporte de ayuda y compra de canasta básica para albergues, hospitales y familias autoalbergadas.",
-      "domains": ["abaco.org.co"],
-      "keywords": ["abaco"],
-      "links": [["Campaña Colombia 2026", "https://donahoy.abaco.org.co/colombia2026"]],
-      "pay": [
-        ["Cuenta corriente Bancolombia", "15264342372", "oficial"],
-        ["Llave Bre-B", "0090989753", "oficial"]
+      "domains": [
+        "abaco.org.co"
       ],
-      "src": ["Verificado a mano en donahoy.abaco.org.co, 11 ago 2026", "https://donahoy.abaco.org.co/colombia2026"]
+      "keywords": [
+        "abaco"
+      ],
+      "links": [
+        [
+          "Campaña Colombia 2026",
+          "https://donahoy.abaco.org.co/colombia2026"
+        ]
+      ],
+      "pay": [
+        [
+          "Cuenta corriente Bancolombia",
+          "15264342372",
+          "oficial"
+        ],
+        [
+          "Llave Bre-B",
+          "0090989753",
+          "oficial"
+        ]
+      ],
+      "src": [
+        "Verificado a mano en donahoy.abaco.org.co, 11 ago 2026",
+        "https://donahoy.abaco.org.co/colombia2026"
+      ]
     },
     {
       "name": "Cruz Roja Colombiana — #TodosPorColombia",
       "nit": null,
       "what": "Rescate, atención médica, agua segura, apoyo psicosocial y reunificación familiar. También recibe donación de sangre en sus puntos habilitados.",
-      "domains": ["cruzrojacolombiana.org", "cruzrojabogota.org.co"],
-      "keywords": ["cruzroja", "cruz-roja", "cruzrojacol"],
+      "domains": [
+        "cruzrojacolombiana.org",
+        "cruzrojabogota.org.co"
+      ],
+      "keywords": [
+        "cruzroja",
+        "cruz-roja",
+        "cruzrojacol"
+      ],
       "links": [
-        ["Sitio institucional", "https://www.cruzrojacolombiana.org/"],
-        ["Portal de donación", "https://ayuda.cruzrojacolombiana.org/"]
+        [
+          "Sitio institucional",
+          "https://www.cruzrojacolombiana.org/"
+        ],
+        [
+          "Portal de donación",
+          "https://ayuda.cruzrojacolombiana.org/"
+        ]
       ],
       "pay": [
-        ["Línea de atención", "601 4376300", "press"],
-        ["Contacto donaciones", "donaciones@cruzrojacolombiana.org", "press"],
-        ["Vínculos familiares (WhatsApp)", "+57 321 213 9525", "press"]
+        [
+          "Línea de atención",
+          "601 4376300",
+          "press"
+        ],
+        [
+          "Contacto donaciones",
+          "donaciones@cruzrojacolombiana.org",
+          "press"
+        ],
+        [
+          "Vínculos familiares (WhatsApp)",
+          "+57 321 213 9525",
+          "press"
+        ]
       ],
       "nodata": "No encontramos un número de cuenta bancaria publicado en los canales oficiales al 11 ago 2026: el portal de donación es una pasarela de pago en línea (tarjeta/PSE), no muestra una cuenta estática. Dona directamente desde el portal oficial.",
-      "src": ["Verificado a mano en cruzrojacolombiana.org y ayuda.cruzrojacolombiana.org, 11 ago 2026", "https://www.cruzrojacolombiana.org/"]
+      "src": [
+        "Verificado a mano en cruzrojacolombiana.org y ayuda.cruzrojacolombiana.org, 11 ago 2026",
+        "https://www.cruzrojacolombiana.org/"
+      ]
     },
     {
       "name": "Fundación PLAN — Terremoto en Colombia",
       "nit": null,
       "what": "Fondo de respuesta para niñas, niños, adolescentes y sus familias. 63 años de operación en Colombia en crisis humanitarias.",
-      "domains": ["plan.org.co"],
-      "keywords": ["fundacionplan", "plan.org"],
-      "links": [["Campaña Terremoto en Colombia", "https://plan.org.co/quiero-ayudar/terremoto-en-colombia/"]],
+      "domains": [
+        "plan.org.co"
+      ],
+      "keywords": [
+        "fundacionplan",
+        "plan.org"
+      ],
+      "links": [
+        [
+          "Campaña Terremoto en Colombia",
+          "https://plan.org.co/quiero-ayudar/terremoto-en-colombia/"
+        ]
+      ],
       "pay": [],
       "nodata": "No encontramos una llave Bre-B ni número de cuenta en la página oficial al 11 ago 2026: el canal disponible ahí es un formulario de donación en línea con montos fijos. Dona directamente desde ese formulario.",
-      "src": ["Verificado a mano en plan.org.co, 11 ago 2026", "https://plan.org.co/quiero-ayudar/terremoto-en-colombia/"]
+      "src": [
+        "Verificado a mano en plan.org.co, 11 ago 2026",
+        "https://plan.org.co/quiero-ayudar/terremoto-en-colombia/"
+      ]
     },
     {
       "name": "Banco de Alimentos de Bogotá",
       "nit": null,
       "what": "Administra y distribuye la recolección de alimentos. Es la organización que gestiona las donaciones económicas hechas desde la app de Rappi.",
-      "domains": ["bancodealimentos.org.co"],
-      "keywords": ["bancodealimentos", "bancoalimentos"],
-      "links": [["Sitio oficial", "https://www.bancodealimentos.org.co/"]],
-      "pay": [["Llave Bre-B", "0091677852", "oficial"]],
-      "src": ["Verificado a mano en bancodealimentos.org.co, 11 ago 2026", "https://www.bancodealimentos.org.co/donaciones-hoy-min/"]
+      "domains": [
+        "bancodealimentos.org.co"
+      ],
+      "keywords": [
+        "bancodealimentos",
+        "bancoalimentos"
+      ],
+      "links": [
+        [
+          "Sitio oficial",
+          "https://www.bancodealimentos.org.co/"
+        ]
+      ],
+      "pay": [
+        [
+          "Llave Bre-B",
+          "0091677852",
+          "oficial"
+        ]
+      ],
+      "src": [
+        "Verificado a mano en bancodealimentos.org.co, 11 ago 2026",
+        "https://www.bancodealimentos.org.co/donaciones-hoy-min/"
+      ]
     },
     {
       "name": "Presentes — Colombia se levanta",
       "nit": null,
       "what": "Campaña para familias que perdieron vivienda y bienes. Opera con la Alcaldía de Medellín y los bancos de alimentos.",
       "domains": [],
-      "keywords": ["presentes"],
+      "keywords": [
+        "presentes"
+      ],
       "links": [],
       "pay": [],
       "nodata": "Sin datos de pago confirmados en esta lista. Búscalos en el canal oficial de la organización antes de transferir.",
-      "src": ["Alcaldía de Medellín / prensa, 10 ago 2026", null]
+      "src": [
+        "Alcaldía de Medellín / prensa, 10 ago 2026",
+        null
+      ]
     }
   ],
   "acopio": [
-    ["Bogotá — Cruz Roja", "SAMU Sur: Av. Cra 68 #31-41 sur · SAMU Norte: Cl 134 con Cra 7B bis #132-31 · Centro de Salvamento Acuático: Av. La Esmeralda #63-81 · Sede Cruz Roja: Cra 24 #73-38 · Bodega: Diag 79B #62-53 · Palacio de los Deportes: Cl 63 #59A-06"],
-    ["Bogotá — Banco de Alimentos", "Calle 19 A #32-50"],
-    ["Medellín", "FUBAM: Cra 52 #30 A-97 · Fundación Saciar: Cra 50 #25-261"],
-    ["Cali", "Plazoleta Jairo Varela: Av. 2 Norte #10 Norte-1 · Fundación Arquidiocesana Banco de Alimentos: Cl 24 #6-103"],
-    ["Manizales", "El Banco de Alimentos de Manizales quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. Mientras tanto, la Alcaldía habilitó los coliseos Mayor y Menor como albergues, donde también reciben alimentos, agua, ropa y cobijas. Donación de sangre: cancha auxiliar junto a Bomberos Palogrande (detrás del Estadio Palogrande) y Hemocentro del Café. No verificamos estas ubicaciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía antes de desplazarte."],
-    ["Pereira", "El Banco de Alimentos de Pereira quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. La Alcaldía reportó 7 puntos CAFE para donaciones ciudadanas: Consota (Villa Consota, Mz 7 y 8), Perla del Otún (diagonal a la iglesia de los 2.500 Lotes), El Remanso (junto al centro de salud del barrio), Kennedy (parque principal), Ormaza (Calle 3 bis), San Nicolás y Comuna del Café. No verificamos estas direcciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía de Pereira antes de desplazarte."]
+    [
+      "Bogotá — Cruz Roja",
+      "SAMU Sur: Av. Cra 68 #31-41 sur · SAMU Norte: Cl 134 con Cra 7B bis #132-31 · Centro de Salvamento Acuático: Av. La Esmeralda #63-81 · Sede Cruz Roja: Cra 24 #73-38 · Bodega: Diag 79B #62-53 · Palacio de los Deportes: Cl 63 #59A-06"
+    ],
+    [
+      "Bogotá — Banco de Alimentos",
+      "Calle 19 A #32-50"
+    ],
+    [
+      "Medellín",
+      "FUBAM: Cra 52 #30 A-97 · Fundación Saciar: Cra 50 #25-261"
+    ],
+    [
+      "Cali",
+      "Plazoleta Jairo Varela: Av. 2 Norte #10 Norte-1 · Fundación Arquidiocesana Banco de Alimentos: Cl 24 #6-103"
+    ],
+    [
+      "Manizales",
+      "El Banco de Alimentos de Manizales quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. Mientras tanto, la Alcaldía habilitó los coliseos Mayor y Menor como albergues, donde también reciben alimentos, agua, ropa y cobijas. Donación de sangre: cancha auxiliar junto a Bomberos Palogrande (detrás del Estadio Palogrande) y Hemocentro del Café. No verificamos estas ubicaciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía antes de desplazarte."
+    ],
+    [
+      "Pereira",
+      "El Banco de Alimentos de Pereira quedó afectado por el sismo; al 11 ago 2026 la prensa reportaba que evaluaban una sede alterna, sin dirección confirmada todavía. La Alcaldía reportó 7 puntos CAFE para donaciones ciudadanas: Consota (Villa Consota, Mz 7 y 8), Perla del Otún (diagonal a la iglesia de los 2.500 Lotes), El Remanso (junto al centro de salud del barrio), Kennedy (parque principal), Ormaza (Calle 3 bis), San Nicolás y Comuna del Café. No verificamos estas direcciones dígito por dígito contra una fuente oficial — confirma con la Alcaldía de Pereira antes de desplazarte."
+    ]
   ]
 }
