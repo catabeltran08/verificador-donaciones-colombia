@@ -189,11 +189,42 @@ promesas de retorno.
 de su dispositivo. Es una decisión de privacidad y también de robustez: funciona
 aunque nuestro servidor esté caído.
 
+### El buscador de puntos de acopio
+
+Es una lista curada a mano (`acopio` en `datos.json`, formato `[ciudad, dirección]`),
+con una caja de búsqueda arriba que filtra por texto sin importar tildes/mayúsculas
+(`escribe.co` matches con `Bogotá — Cruz Roja`, por ejemplo). **No hay ningún
+buscador web en vivo detrás** — no es posible sin backend (expondría una API key) y
+no sería seguro (un resultado de búsqueda puede ser una campaña falsa o una
+dirección vieja, y mostrarlo con la misma autoridad visual que el resto de la
+página lo estaría avalando sin querer — justo lo que la Regla 6 prohíbe).
+
+Si buscas una ciudad que no está en la lista, sale un mensaje neutral: no hay punto
+confirmado, llama a la Alcaldía/Cruz Roja local, o dona por los canales oficiales de
+arriba sin necesidad de desplazarte. Nunca se inventa una dirección para llenar el
+hueco.
+
+**Cómo añadir una ciudad nueva (proceso manual, igual de riguroso que el Paso 1):**
+busca en prensa los puntos de acopio de esa ciudad, y si no hay una dirección
+concreta y confirmada (por ejemplo porque el banco de alimentos local también quedó
+afectado por el sismo), dilo explícitamente en el texto en vez de inventar una — así
+se hizo con Manizales y Pereira, donde ambos bancos de alimentos locales quedaron
+dañados y no había sede alterna confirmada todavía.
+
+A diferencia de las organizaciones (sección 5b), **hoy no existe automatización que
+descubra ciudades nuevas sola** — cada una se investiga y se agrega a mano. Sería
+razonable construir un tercer workflow de n8n con el mismo patrón (buscar en prensa,
+corroborar contra el artículo real, dejar en una cola para revisión humana) si el
+mantenimiento manual se vuelve mucho trabajo.
+
 ---
 
 ## 4. Paso a paso: de cero a publicado
 
-### Paso 0 — Preparar la carpeta
+> Estado real al 11 ago 2026: Pasos 0–4 hechos. Paso 5 construido pero sin correr
+> todavía en una instancia real de n8n. Paso 6 pendiente.
+
+### Paso 0 — Preparar la carpeta ✅
 
 ```bash
 mkdir verificador && cd verificador
@@ -201,8 +232,10 @@ git init
 ```
 
 Guarda aquí `CLAUDE.md`, y copia `index.html` y `datos.json` que ya tenemos.
+`.gitignore` excluye `.DS_Store` y `.claude/` (archivos internos de la herramienta,
+no del proyecto).
 
-### Paso 1 — Verificar los datos a mano (NO SALTAR ESTE PASO)
+### Paso 1 — Verificar los datos a mano (NO SALTAR ESTE PASO) ✅
 
 Los números que hay ahora en `datos.json` salieron de prensa, no de las fuentes
 primarias. **Este es hoy el mayor riesgo del proyecto**, más que cualquier cosa del
@@ -220,34 +253,62 @@ Para cada organización:
 Media hora aburrida que ninguna automatización sustituye. El pipeline solo puede
 mantener la exactitud que le des al arrancar.
 
-Organizaciones a verificar: ABACO (`abaco.org.co`), Cruz Roja Colombiana
-(`cruzrojacolombiana.org`), Fundación PLAN (`plan.org.co`), Banco de Alimentos de
-Bogotá (`bancodealimentos.org.co`).
+Organizaciones verificadas el 11 ago 2026: ABACO (`abaco.org.co`) y Banco de
+Alimentos de Bogotá (`bancodealimentos.org.co`) quedaron `"oficial"` — cuenta y
+Bre-B de ABACO confirmadas en `donahoy.abaco.org.co`; la Bre-B de Banco de
+Alimentos está publicada como **imagen**, se leyó a mano de ahí. Cruz Roja
+Colombiana (`cruzrojacolombiana.org`) y Fundación PLAN (`plan.org.co`) **no**
+tienen ningún dato de pago publicado como texto — sus portales son pasarelas de
+pago / formularios con montos fijos, no cuentas estáticas — así que se quedaron
+sin campo `pay` verificable, con una nota explicando por qué y enlazando al canal
+real. Eso es correcto, no un pendiente: no existe nada que verificar todavía.
 
-### Paso 2 — Aplicar la Regla 2
+### Paso 2 — Aplicar la Regla 2 ✅
 
 Quitar los números de cuenta de la vista. El directorio pasa a mostrar: nombre,
-descripción, enlace oficial, y una etiqueta de cuándo se verificó por última vez.
-Los datos siguen en el JSON, solo dejan de renderizarse.
+descripción, enlace oficial, y una etiqueta de si el dato está `"oficial, verificado"`
+o `"reportado, sin confirmar"`. Los datos siguen en el JSON, solo dejan de
+renderizarse.
 
-### Paso 3 — Escribir las pruebas antes de tocar nada más
+*(Nota de una revisión real: en la primera versión del código, el directorio SÍ
+mostraba el número en pantalla — un bug directo contra esta regla, encontrado al
+hacer el Paso 1 a mano y corregido antes de publicar. Si vuelves a tocar la función
+`pintar()`, revisa que ningún `<span class="v">` con el valor crudo se cuele de
+nuevo.)*
 
-Ver sección 6. Sin esto, cada cambio posterior es a ciegas.
+### Paso 3 — Escribir las pruebas antes de tocar nada más ✅
 
-### Paso 4 — Publicar
+Ver sección 6. `tests/run.js` corre 14 casos fijos + robustez + el fuzz estadístico
++ un caso específico de que una candidata de `pendientes.json` nunca dé azul.
+Sin esto, cada cambio posterior es a ciegas.
 
-GitHub Pages, Netlify o Vercel. Los tres son gratis y despliegan solos con cada
-`git push`. Con GitHub Pages: subes el repo, activas Pages en Settings, y en dos
-minutos tienes una URL pública.
+### Paso 4 — Publicar ✅
 
-### Paso 5 — Automatizar (sección 5)
+Publicado en GitHub Pages: repo público `github.com/<tu-usuario>/verificador-donaciones-colombia`,
+en vivo en **`adondevatuplata.com`** con HTTPS forzado (certificado emitido por
+GitHub, renovación automática). El dominio se compró aparte (Namecheap) y se apuntó
+por DNS (registros A a las IPs de GitHub Pages + CNAME `www`) en vez de usar el
+subdominio `tu-usuario.github.io` — a propósito, para que la URL pública no lleve
+el nombre de usuario de GitHub de quien la mantiene. El archivo `CNAME` en la raíz
+del repo es lo que le dice a GitHub Pages cuál es el dominio.
+
+### Paso 5 — Automatizar (sección 5 y 5b)
+
+`n8n/workflow.json` (verificación de pagos de las orgs conocidas) y
+`n8n/workflow-descubrimiento.json` (descubrimiento de orgs nuevas vía prensa) ya
+están escritos y su lógica se probó en Node contra datos reales — pero **ninguno de
+los dos se ha corrido todavía dentro de una instancia real de n8n**. Antes de
+activarlos: importarlos, configurar credenciales (GitHub, Anthropic, healthchecks.io
+— un UUID por workflow), correr cada uno una vez a mano, y revisar el commit que
+produce antes de dejarlo en automático.
 
 ### Paso 6 — Avisar a las organizaciones
 
 Escríbele a la Cruz Roja y a ABACO por sus canales oficiales contándoles que existe.
 Si alguna lo enlaza, pasa de ser una herramienta más en el ruido a un canal con
 autoridad. Eso multiplica su alcance más que cualquier cosa que le agregues al
-código.
+código. Ahora hay una URL propia y presentable para mandarles — antes de este paso
+no la había.
 
 ---
 
@@ -346,11 +407,15 @@ campo `pay`. Pueden alimentar el campo `desmentidos` (Regla 7), nada más.
 
 ### Tres cosas que te van a morder
 
-**Portales en JavaScript.** `donahoy.abaco.org.co` es casi seguro una aplicación de
-una sola página: el HTTP Request te devolverá un cascarón vacío, el hash nunca
-cambiará, y tendrás la falsa sensación de que todo está estable. Pruébalo a mano
-primero. Si viene vacío, monitorea el sitio institucional en vez del portal, o usa
-un nodo de navegador headless.
+**Datos publicados como imagen, no como texto.** Esto no es hipotético: la llave
+Bre-B de Banco de Alimentos de Bogotá está publicada como PNG (`breB.png`), no como
+texto — un `HTTP Request` + corroboración de texto nunca la va a poder leer, jamás,
+sin importar cuánto mejores el scraper. Por eso `workflow.json` solo intenta
+auto-verificar a ABACO (ver sección 5b): es la única organización cuyos datos de
+pago están en texto plano hoy. Pruébalo a mano primero para cada organización nueva
+antes de asumir que el texto está ahí — `donahoy.abaco.org.co` resultó ser HTML
+normal (no una SPA, contra lo que se temía al principio), pero no asumas que la
+siguiente organización también lo será.
 
 **No martilles los servidores.** Están bajo carga real de gente buscando ayuda.
 30–60 minutos es suficiente, y con `If-None-Match` la mayoría de corridas ni
@@ -531,4 +596,7 @@ No construimos, aunque parezca buena idea:
 
 ---
 
-*Última actualización de este documento: 11 de agosto de 2026.*
+*Última actualización de este documento: 11 de agosto de 2026 (Pasos 0–4 marcados
+como hechos, sección 3 con el buscador de acopio, 5b con el descubrimiento de
+organizaciones, "tres cosas que te van a morder" corregida con el hallazgo real de
+Banco de Alimentos).*
