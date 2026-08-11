@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Corre los casos de tests/casos.json contra la lógica embebida en
- * verificador-donaciones-colombia.html — sin build, sin dependencias.
+ * index.html — sin build, sin dependencias.
  * Uso: node tests/run.js
  */
 'use strict';
@@ -10,7 +10,7 @@ const path = require('path');
 const vm = require('vm');
 
 const RAIZ = path.join(__dirname, '..');
-const HTML_PATH = path.join(RAIZ, 'verificador-donaciones-colombia.html');
+const HTML_PATH = path.join(RAIZ, 'index.html');
 
 function fakeEl(){
   return {
