@@ -390,7 +390,17 @@ hacia *"desactualizado y honesto"*, nunca hacia *"actualizado con basura"*.
 
 ### El prompt de Claude, en modo notario
 
-Temperatura 0. Salida JSON estricta. Y esta instrucción explícita:
+Usamos `claude-sonnet-5` — de sobra para copiar texto literal, y mucho más barato
+que Opus para algo que corre cada 30 minutos. `thinking` va explícitamente
+desactivado (`{"type": "disabled"}`): en este modelo no hace falta para una tarea
+de copiar-literal, y sin eso el bloque de respuesta es solo texto, sin un bloque de
+"pensamiento" por delante que descoloque el parseo. *(Nota técnica: en Claude Sonnet
+5 el parámetro `temperature` ya no existe — mandarlo con cualquier valor que no sea
+el que trae por defecto revienta la llamada con error 400. El determinismo real de
+esta pieza no viene de la temperatura de todos modos: viene del nodo de
+corroboración de abajo, que descarta cualquier cosa que no aparezca literal en el
+HTML — eso es lo que de verdad evita que el modelo "invente".)* Salida JSON
+estricta. Y esta instrucción explícita:
 
 > Copia los números literalmente. No los completes, no los corrijas, no los
 > reformatees. Si un dato está incompleto o ambiguo, devuelve `null` para ese campo.

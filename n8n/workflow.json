@@ -167,7 +167,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1024, temperature: 0, system: 'Eres un notario de datos. Copia los números literalmente. No los completes, no los corrijas, no los reformatees. Si un dato está incompleto o ambiguo, devuelve null para ese campo. Nunca inventes un valor que no aparezca textualmente en el documento. Responde SOLO con un array JSON de objetos {type, value}, sin explicación ni texto adicional. Si no hay ningún dato de pago, responde [].', messages: [{ role: 'user', content: 'Texto de la página de donaciones de ' + $json.org + ':\\n\\n' + $json.textoPlano }] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1024, thinking: { type: 'disabled' }, system: 'Eres un notario de datos. Copia los números literalmente. No los completes, no los corrijas, no los reformatees. Si un dato está incompleto o ambiguo, devuelve null para ese campo. Nunca inventes un valor que no aparezca textualmente en el documento. Responde SOLO con un array JSON de objetos {type, value}, sin explicación ni texto adicional. Si no hay ningún dato de pago, responde [].', messages: [{ role: 'user', content: 'Texto de la página de donaciones de ' + $json.org + ':\\n\\n' + $json.textoPlano }] }) }}",
         "options": { "timeout": 30000 }
       },
       "credentials": {
@@ -182,7 +182,7 @@
       "position": [1460, 260],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const origen = $('Comparar con corrida anterior').item.json;\nconst resp = $input.item.json;\n\nlet extraidos = [];\nlet parseoOk = true;\ntry {\n  const texto = (resp.content && resp.content[0] && resp.content[0].text) || '[]';\n  extraidos = JSON.parse(texto);\n  if (!Array.isArray(extraidos)) throw new Error('la respuesta no fue un array');\n} catch (e) {\n  // Claude no devolvió JSON válido, o la llamada falló (resp.error). No se inventa\n  // nada: se trata como 'sin datos nuevos que aplicar', el CORROBORAR de abajo\n  // igual lo hubiera rechazado si hubiera intentado usarlo.\n  extraidos = [];\n  parseoOk = false;\n}\n\nreturn { json: { ...origen, extraidos, parseoOk } };\n"
+        "jsCode": "const origen = $('Comparar con corrida anterior').item.json;\nconst resp = $input.item.json;\n\n// Busca el bloque de tipo 'text' por tipo, no por posición: si algún día\n// 'thinking' queda activado (a propósito o por un cambio de default de la\n// API), el bloque de pensamiento aparece ANTES del de texto en content[].\nlet extraidos = [];\nlet parseoOk = true;\ntry {\n  const bloqueTexto = (resp.content || []).find(b => b.type === 'text');\n  const texto = (bloqueTexto && bloqueTexto.text) || '[]';\n  extraidos = JSON.parse(texto);\n  if (!Array.isArray(extraidos)) throw new Error('la respuesta no fue un array');\n} catch (e) {\n  // Claude no devolvió JSON válido, o la llamada falló (resp.error). No se inventa\n  // nada: se trata como 'sin datos nuevos que aplicar', el CORROBORAR de abajo\n  // igual lo hubiera rechazado si hubiera intentado usarlo.\n  extraidos = [];\n  parseoOk = false;\n}\n\nreturn { json: { ...origen, extraidos, parseoOk } };\n"
       }
     },
     {
