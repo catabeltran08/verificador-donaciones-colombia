@@ -50,7 +50,8 @@
         "operation": "get",
         "owner": "TU-USUARIO-DE-GITHUB",
         "repository": "verificador-donaciones-colombia",
-        "filePath": "datos.json"
+        "filePath": "datos.json",
+        "asBinaryProperty": false
       },
       "credentials": { "githubApi": { "id": "PLACEHOLDER", "name": "GitHub — verificador" } }
     },
@@ -76,7 +77,8 @@
         "operation": "get",
         "owner": "TU-USUARIO-DE-GITHUB",
         "repository": "verificador-donaciones-colombia",
-        "filePath": "pendientes.json"
+        "filePath": "pendientes.json",
+        "asBinaryProperty": false
       },
       "credentials": { "githubApi": { "id": "PLACEHOLDER", "name": "GitHub — verificador" } }
     },
