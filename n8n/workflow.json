@@ -1,0 +1,303 @@
+{
+  "name": "Verificador donaciones — actualización automática",
+  "nodes": [
+    {
+      "id": "nota-config",
+      "name": "Nota: qué configurar antes de activar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-480, -420],
+      "parameters": {
+        "width": 460,
+        "height": 380,
+        "content": "## Antes de activar este workflow\n\n1. **Credencial de GitHub** (Personal Access Token, scope `repo`) — asígnala en los dos nodos GitHub.\n2. **Credencial de Anthropic** (header auth, `x-api-key`) — asígnala en el nodo \"Pedir extracción a Claude\".\n3. En los dos nodos GitHub, cambia `owner` y `repository` por los tuyos (ej. `catabeltran08` / `verificador-donaciones-colombia`).\n4. En \"Avisar que seguimos vivos\", reemplaza la URL de ejemplo por tu UUID real de healthchecks.io.\n5. Corre el workflow **una vez manualmente** antes de activar el Schedule Trigger, y revisa el commit que produce en GitHub antes de confiar en él.\n\nEsto se escribió sin acceso a una instancia real de n8n — al importar, es normal que te pida actualizar la versión de algún nodo. Acepta y revisa que los parámetros sigan ahí."
+      }
+    },
+    {
+      "id": "nota-alcance",
+      "name": "Nota: qué SÍ y qué NO verifica solo",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-480, 20],
+      "parameters": {
+        "width": 460,
+        "height": 300,
+        "content": "## Alcance real (Paso 1, 11 ago 2026)\n\nDe las 4 organizaciones, hoy **solo ABACO** tiene datos de pago publicados como texto plano — es la única en `ORGS_AUTO_CORROBORABLES` dentro de \"Expandir por organización\".\n\n- **Cruz Roja / Fundación PLAN**: sin dato de pago en texto (pasarela de pago / formulario). Este workflow solo puede avisar \"la página cambió\", nunca escribir un dato.\n- **Banco de Alimentos**: la llave Bre-B está en una **imagen** (`breB.png`). Ningún workflow de texto puede corroborarla jamás. Si algún día la publican como texto, agrégala a la lista a mano — nunca automático (Regla 3)."
+      }
+    },
+    {
+      "id": "trigger",
+      "name": "Cada 30 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-480, 400],
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "minutes", "minutesInterval": 30 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "leer-datos-json",
+      "name": "Leer datos.json",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [-220, 400],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": "TU-USUARIO-DE-GITHUB",
+        "repository": "verificador-donaciones-colombia",
+        "filePath": "datos.json",
+        "asBinaryProperty": false
+      },
+      "credentials": {
+        "githubApi": { "id": "PLACEHOLDER", "name": "GitHub — verificador" }
+      }
+    },
+    {
+      "id": "expandir-orgs",
+      "name": "Expandir por organización",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [20, 400],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Regla 3 en código: solo estas organizaciones pueden ser auto-verificadas.\n// Ver 'Nota: qué SÍ y qué NO verifica solo' en el canvas para el porqué de cada una.\nconst ORGS_AUTO_CORROBORABLES = [\n  'ABACO — Asociación de Bancos de Alimentos de Colombia',\n];\n\nconst file = $input.first().json;\nconst contenido = Buffer.from(file.content, 'base64').toString('utf8');\nconst datos = JSON.parse(contenido);\n\nreturn datos.orgs\n  .filter(o => o.links && o.links[0] && o.links[0][1])\n  .map(o => ({\n    json: {\n      org: o.name,\n      url: o.links[0][1],\n      autoCorrobora: ORGS_AUTO_CORROBORABLES.includes(o.name),\n      payActual: o.pay || [],\n      fileSha: file.sha,\n      datosCompletosJSON: contenido,\n    }\n  }));\n"
+      }
+    },
+    {
+      "id": "descargar-pagina",
+      "name": "Descargar página oficial",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 400],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "If-None-Match",
+              "value": "={{ $getWorkflowStaticData('global')['etag_' + $json.org] || '' }}"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (compatible; VerificadorDonacionesBot/1.0)"
+            }
+          ]
+        },
+        "options": {
+          "response": { "response": { "fullResponse": true, "neverError": true } },
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "hash-contenido",
+      "name": "Leer texto y calcular hash",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 400],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\nconst origen = $('Expandir por organización').item.json;\nconst resp = $input.item.json;\n\n// Si el nodo anterior falló de plano (sitio caído, DNS, timeout), resp trae .error\n// en vez de .statusCode. Se trata igual que un fetch fallido: falla hacia 'inútil',\n// nunca hacia 'dañino' (Regla 6) — simplemente no hay nada nuevo que verificar esta corrida.\nconst huboErrorDeRed = !!resp.error;\nconst statusCode = resp.statusCode;\n\nlet html = null;\nif (!huboErrorDeRed && statusCode >= 200 && statusCode < 300) {\n  html = typeof resp.body === 'string' ? resp.body : JSON.stringify(resp.body);\n}\n// (304 Not Modified, 4xx, 5xx o error de red -> html queda null -> no hay cambio que evaluar)\n\nconst textoPlano = html ? html.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim() : '';\nconst hash = html ? crypto.createHash('sha256').update(textoPlano).digest('hex') : null;\nconst etagNuevo = (resp.headers && (resp.headers.etag || resp.headers.ETag)) || null;\n\nreturn {\n  json: {\n    ...origen,\n    statusCode: statusCode || null,\n    htmlOriginal: html,\n    textoPlano,\n    hash,\n    etagNuevo,\n    fetchOk: html !== null,\n  }\n};\n"
+      }
+    },
+    {
+      "id": "comparar-hash",
+      "name": "Comparar con corrida anterior",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, 400],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.hashes) staticData.hashes = {};\n\n// OJO: acá solo se LEE. El hash nuevo se guarda al final, y solo si el commit\n// a GitHub tuvo éxito — si no, la próxima corrida vuelve a intentar (ver nodo\n// 'Guardar hashes nuevos').\nconst hashAnterior = staticData.hashes[item.org] || null;\nconst cambio = item.fetchOk && hashAnterior !== item.hash;\n\nreturn { json: { ...item, hashAnterior, cambio } };\n"
+      }
+    },
+    {
+      "id": "if-corroborar",
+      "name": "¿Cambió y se puede auto-verificar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [980, 400],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-cambio",
+              "leftValue": "={{ $json.cambio }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            },
+            {
+              "id": "cond-auto",
+              "leftValue": "={{ $json.autoCorrobora }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pedir-claude",
+      "name": "Pedir extracción a Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1220, 260],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1024, temperature: 0, system: 'Eres un notario de datos. Copia los números literalmente. No los completes, no los corrijas, no los reformatees. Si un dato está incompleto o ambiguo, devuelve null para ese campo. Nunca inventes un valor que no aparezca textualmente en el documento. Responde SOLO con un array JSON de objetos {type, value}, sin explicación ni texto adicional. Si no hay ningún dato de pago, responde [].', messages: [{ role: 'user', content: 'Texto de la página de donaciones de ' + $json.org + ':\\n\\n' + $json.textoPlano }] }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "PLACEHOLDER", "name": "Anthropic API" }
+      }
+    },
+    {
+      "id": "parsear-claude",
+      "name": "Parsear respuesta de Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1460, 260],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const origen = $('Comparar con corrida anterior').item.json;\nconst resp = $input.item.json;\n\nlet extraidos = [];\nlet parseoOk = true;\ntry {\n  const texto = (resp.content && resp.content[0] && resp.content[0].text) || '[]';\n  extraidos = JSON.parse(texto);\n  if (!Array.isArray(extraidos)) throw new Error('la respuesta no fue un array');\n} catch (e) {\n  // Claude no devolvió JSON válido, o la llamada falló (resp.error). No se inventa\n  // nada: se trata como 'sin datos nuevos que aplicar', el CORROBORAR de abajo\n  // igual lo hubiera rechazado si hubiera intentado usarlo.\n  extraidos = [];\n  parseoOk = false;\n}\n\nreturn { json: { ...origen, extraidos, parseoOk } };\n"
+      }
+    },
+    {
+      "id": "corroborar",
+      "name": "CORROBORAR (Regla 3)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1700, 260],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Nodo Code, justo después de la extracción con IA (CLAUDE.md sección 5).\n// Si el modelo inventó, corrigió o 'completó' un dígito, esto lo detecta.\n// A propósito NUNCA hace throw: un fallo acá debe caer del lado 'inútil'\n// (no se escribe el dato) y no tumbar la corrida de las demás organizaciones.\nconst item = $input.item.json;\nconst limpio = s => String(s).replace(/[\\s.\\-]/g, '');\nconst htmlLimpio = limpio(item.htmlOriginal || '');\n\nconst inventados = (item.extraidos || []).filter(\n  c => c.value != null && !htmlLimpio.includes(limpio(c.value))\n);\nconst corroboracionOk = item.parseoOk && inventados.length === 0;\n\nreturn {\n  json: {\n    ...item,\n    corroboracionOk,\n    motivoCorroboracion: corroboracionOk ? null : ('Extracción inventó o no corroboró: ' + JSON.stringify(inventados)),\n  }\n};\n"
+      }
+    },
+    {
+      "id": "fusible",
+      "name": "FUSIBLE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1940, 260],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Mitad 'por organización' del fusible (CLAUDE.md sección 5): una página que\n// vuelve sospechosamente vacía (bloqueo por bot, redirección, caída) es una\n// señal de ESA organización específica. Tampoco hace throw — ver nota en CORROBORAR.\n// El otro chequeo del fusible ('el cambio afecta >30% de los datos de pago') es\n// GLOBAL, no por organización, y se evalúa más abajo en 'Reconstruir datos.json'\n// — con solo 2 campos auto-corroborables hoy (ambos de ABACO), medirlo por\n// organización haría que CUALQUIER cambio legítimo de un solo campo (ej. cambiaron\n// de banco) se viera como '50%' y bloqueara todo, siempre. El fusible de tamaño\n// de página SÍ tiene sentido por organización porque no depende de cuántos campos\n// haya, así que se queda acá.\nconst item = $input.item.json;\n\nif (!item.corroboracionOk) {\n  return { json: { ...item, fusibleOk: false, motivoFusible: 'no aplica: la corroboración ya falló' } };\n}\n\nconst motivos = [];\nif ((item.htmlOriginal || '').length < 3000) motivos.push('el HTML descargado es sospechosamente pequeño');\n\nreturn { json: { ...item, fusibleOk: motivos.length === 0, motivoFusible: motivos.join('; ') || null } };\n"
+      }
+    },
+    {
+      "id": "preparar-cambios",
+      "name": "Preparar cambios verificados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1220, 520],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Punto de reunión de las dos ramas del IF: las que pasaron por Claude/CORROBORAR/\n// FUSIBLE, y las que ni siquiera se intentaron (no autoCorrobora, o no cambió nada).\nconst item = $input.item.json;\nconst listoParaEscribir = item.corroboracionOk === true && item.fusibleOk === true;\n\nlet payNuevo = item.payActual;\nlet alerta = null;\n\nif (listoParaEscribir) {\n  // Regla 4: solo se actualiza el valor de campos que ya existían; nunca se\n  // borra una fila. Si algún día se detecta que una cuenta ya no aparece,\n  // eso se maneja aparte marcándola 'retirada' — no en este workflow todavía.\n  payNuevo = item.payActual.map(([t, v, estado]) => {\n    const encontrado = (item.extraidos || []).find(e => e.type === t);\n    return (encontrado && encontrado.value) ? [t, encontrado.value, 'oficial'] : [t, v, estado];\n  });\n} else if (item.corroboracionOk === false) {\n  alerta = `${item.org}: la extracción automática no coincidió con el HTML — revisa a mano. (${item.motivoCorroboracion})`;\n} else if (item.fusibleOk === false) {\n  alerta = `${item.org}: el fusible bloqueó el cambio — revisa a mano. (${item.motivoFusible})`;\n} else if (item.cambio) {\n  alerta = `${item.org}: la página cambió pero esta organización no está en la lista de auto-corroboración — revísala a mano.`;\n}\n\nreturn { json: { ...item, payNuevo, verificadoAhora: listoParaEscribir, alerta } };\n"
+      }
+    },
+    {
+      "id": "reconstruir-json",
+      "name": "Reconstruir datos.json",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1460, 520],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nconst base = JSON.parse(items[0].json.datosCompletosJSON); // igual en todos los items\nconst ahora = new Date().toISOString();\n\n// ---- Fusible GLOBAL: % de los datos de pago del proyecto que cambiaría este commit ----\n// (CLAUDE.md sección 5: 'el cambio afectaría más del 30% de los datos de pago').\n// Se mide contra TODOS los campos de pago de datos.json, no solo los de esta\n// organización — así un cambio normal de un solo campo no se ve artificialmente\n// enorme. Con muy pocos campos auto-corroborables todavía, el % no es confiable\n// (un solo cambio ya parece '50%'), así que el umbral solo se aplica cuando hay\n// una muestra mínima; por debajo de eso, la corroboración por campo (Regla 3)\n// sigue siendo la protección real.\nconst MUESTRA_MINIMA = 5;\nconst totalCamposPago = base.orgs.reduce((n, o) => n + (o.pay ? o.pay.length : 0), 0);\nconst camposCambiados = items.reduce((n, it) => {\n  if (!it.json.verificadoAhora) return n;\n  const diffs = it.json.payNuevo.filter((p, i) => p[1] !== it.json.payActual[i][1]).length;\n  return n + diffs;\n}, 0);\nconst pctGlobal = totalCamposPago ? camposCambiados / totalCamposPago : 0;\nconst fusibleGlobalSalta = totalCamposPago >= MUESTRA_MINIMA && pctGlobal > 0.30;\n\nconst cambios = [];\nif (!fusibleGlobalSalta) {\n  for (const it of items) {\n    const j = it.json;\n    const org = base.orgs.find(o => o.name === j.org);\n    if (!org) continue;\n    if (j.verificadoAhora) {\n      org.pay = j.payNuevo;\n      cambios.push(j.org);\n    }\n  }\n}\n\n// El campo más importante que escribe n8n (CLAUDE.md sección 5): se actualiza\n// SIEMPRE, haya cambios de pago o no, incluso si el fusible global abortó los\n// cambios de pago — así el aviso de frescura de la página sigue siendo honesto.\nbase.meta.verificado_el = ahora;\nbase.meta.revisado_por = 'n8n';\n\nconst alertas = items.filter(it => it.json.alerta).map(it => it.json.alerta);\nif (fusibleGlobalSalta) {\n  alertas.unshift(`FUSIBLE GLOBAL: el cambio afecta ${(pctGlobal * 100).toFixed(0)}% de los ${totalCamposPago} campos de pago del proyecto (>30%) — no se publicó NINGÚN cambio de pago esta corrida, revisa a mano.`);\n}\n\nreturn [{\n  json: {\n    contenidoNuevo: JSON.stringify(base, null, 2),\n    fileSha: items[0].json.fileSha,\n    orgsCambiadas: fusibleGlobalSalta ? [] : cambios,\n    alertas,\n    fusibleGlobalSalta,\n    resultadosPorOrg: items.map(it => ({ org: it.json.org, hash: it.json.hash, cambio: it.json.cambio, verificadoAhora: it.json.verificadoAhora && !fusibleGlobalSalta })),\n  }\n}];\n"
+      }
+    },
+    {
+      "id": "escribir-github",
+      "name": "Escribir datos.json en GitHub",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [1700, 520],
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": "TU-USUARIO-DE-GITHUB",
+        "repository": "verificador-donaciones-colombia",
+        "filePath": "datos.json",
+        "fileContent": "={{ $json.contenidoNuevo }}",
+        "commitMessage": "={{ 'n8n: verificación automática' + ($json.orgsCambiadas.length ? (' — cambios en: ' + $json.orgsCambiadas.join(', ')) : ' (sin cambios de pago, solo verificado_el)') + ($json.alertas.length ? (' | ALERTAS: ' + $json.alertas.join(' / ')) : '') }}",
+        "additionalParameters": {
+          "branch": { "branch": "main" }
+        }
+      },
+      "credentials": {
+        "githubApi": { "id": "PLACEHOLDER", "name": "GitHub — verificador" }
+      }
+    },
+    {
+      "id": "guardar-hashes",
+      "name": "Guardar hashes nuevos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1940, 520],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Se guarda SOLO el hash de las organizaciones cuyo cambio realmente quedó\n// escrito en el commit (verificadoAhora === true, ya ajustado por el fusible\n// global). Para las demás — sin cambios, corroboración fallida, fusible por\n// tamaño, o bloqueadas por el fusible global — NO se guarda nada, para que la\n// próxima corrida (30 min después) las vuelva a detectar como 'cambio' y siga\n// insistiendo/alertando hasta que alguien lo revise a mano. Nada queda\n// 'olvidado' en silencio (CLAUDE.md sección 6: los dos fallos silenciosos).\nconst info = $('Reconstruir datos.json').first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.hashes) staticData.hashes = {};\n\nfor (const r of info.resultadosPorOrg) {\n  if (r.hash && r.verificadoAhora) staticData.hashes[r.org] = r.hash;\n}\n\nreturn [{ json: { guardado: true, orgsCambiadas: info.orgsCambiadas, alertas: info.alertas, fusibleGlobalSalta: info.fusibleGlobalSalta } }];\n"
+      }
+    },
+    {
+      "id": "healthcheck",
+      "name": "Avisar que seguimos vivos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2180, 520],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "https://hc-ping.com/PEGA-AQUI-TU-UUID-DE-HEALTHCHECKS-IO",
+        "options": { "timeout": 10000 }
+      }
+    }
+  ],
+  "connections": {
+    "Cada 30 minutos": { "main": [[{ "node": "Leer datos.json", "type": "main", "index": 0 }]] },
+    "Leer datos.json": { "main": [[{ "node": "Expandir por organización", "type": "main", "index": 0 }]] },
+    "Expandir por organización": { "main": [[{ "node": "Descargar página oficial", "type": "main", "index": 0 }]] },
+    "Descargar página oficial": { "main": [[{ "node": "Leer texto y calcular hash", "type": "main", "index": 0 }]] },
+    "Leer texto y calcular hash": { "main": [[{ "node": "Comparar con corrida anterior", "type": "main", "index": 0 }]] },
+    "Comparar con corrida anterior": { "main": [[{ "node": "¿Cambió y se puede auto-verificar?", "type": "main", "index": 0 }]] },
+    "¿Cambió y se puede auto-verificar?": {
+      "main": [
+        [{ "node": "Pedir extracción a Claude", "type": "main", "index": 0 }],
+        [{ "node": "Preparar cambios verificados", "type": "main", "index": 0 }]
+      ]
+    },
+    "Pedir extracción a Claude": { "main": [[{ "node": "Parsear respuesta de Claude", "type": "main", "index": 0 }]] },
+    "Parsear respuesta de Claude": { "main": [[{ "node": "CORROBORAR (Regla 3)", "type": "main", "index": 0 }]] },
+    "CORROBORAR (Regla 3)": { "main": [[{ "node": "FUSIBLE", "type": "main", "index": 0 }]] },
+    "FUSIBLE": { "main": [[{ "node": "Preparar cambios verificados", "type": "main", "index": 0 }]] },
+    "Preparar cambios verificados": { "main": [[{ "node": "Reconstruir datos.json", "type": "main", "index": 0 }]] },
+    "Reconstruir datos.json": { "main": [[{ "node": "Escribir datos.json en GitHub", "type": "main", "index": 0 }]] },
+    "Escribir datos.json en GitHub": { "main": [[{ "node": "Guardar hashes nuevos", "type": "main", "index": 0 }]] },
+    "Guardar hashes nuevos": { "main": [[{ "node": "Avisar que seguimos vivos", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" }
+}
