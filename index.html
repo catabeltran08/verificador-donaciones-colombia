@@ -1,6 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Verificador de donaciones — Terremoto Colombia</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -40,6 +41,9 @@ header{padding:34px 0 26px;border-bottom:2px solid var(--ink)}
   display:flex;align-items:center;gap:8px;margin:0 0 12px
 }
 .eyebrow::before{content:"";width:26px;height:2px;background:var(--rojo);display:block}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.logo{width:64px;height:64px;flex:none;margin-top:2px}
+@media (max-width:480px){.logo{width:44px;height:44px}}
 h1{
   font-family:var(--disp);font-variation-settings:'wdth' 70,'wght' 850;
   font-size:clamp(34px,9vw,60px);line-height:.94;letter-spacing:-.015em;
@@ -205,8 +209,13 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
 
 <div class="wrap">
 <header>
-  <p class="eyebrow">Colombia · Sismo 7,4 · Chocó · 10 ago 2026</p>
-  <h1>¿A dónde<br>va tu plata?</h1>
+  <div class="header-top">
+    <div>
+      <p class="eyebrow">Colombia · Sismo 7,4 · Chocó · 10 ago 2026</p>
+      <h1>¿A dónde<br>va tu plata?</h1>
+    </div>
+    <img src="logo.svg" alt="" class="logo">
+  </div>
   <p class="sub">Pega una cuenta, una llave Bre-B, un enlace o el mensaje completo que te llegó. Se compara contra los canales que las organizaciones publicaron oficialmente.</p>
   <p class="stamp">Verificación local · nada de lo que pegues sale de tu dispositivo</p>
   <p class="hint" style="margin-top:10px">Las cuentas y llaves de las organizaciones verificadas se revisan automáticamente cada 30 minutos contra sus sitios oficiales. El aviso de abajo dice si esa revisión sigue funcionando ahora mismo.</p>
