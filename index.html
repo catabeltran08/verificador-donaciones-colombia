@@ -809,24 +809,32 @@ function pintarSaludMental(){
 /* ============ FRESCURA Y CARGA REMOTA ============ */
 const FUENTE_DATOS = "datos.json";   // apunta esto al JSON que actualice n8n
 
+function formatFecha(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return "";
+  const pad = n => String(n).padStart(2,"0");
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function avisoFrescura(){
   const el = $("#frescura");
   const horas = (Date.now() - new Date(VERIFICADO_EL).getTime()) / 36e5;
   if(isNaN(horas)) return;
 
+  const fecha = formatFecha(VERIFICADO_EL);
   let tono, texto;
   if(ORIGEN==="respaldo"){
     tono="amarillo";
     texto="No se pudo cargar la lista actualizada. Estás viendo una copia guardada del 11 de agosto: confirma cada dato en el sitio oficial antes de transferir.";
   } else if(horas>24){
     tono="rojo";
-    texto=`Esta lista no se revisa desde hace ${Math.floor(horas)} horas. En una emergencia los canales cambian a diario: no transfieras sin confirmar en el sitio oficial de la organización.`;
+    texto=`Esta lista no se revisa desde el ${fecha}. En una emergencia los canales cambian a diario: no transfieras sin confirmar en el sitio oficial de la organización.`;
   } else if(horas>6){
     tono="amarillo";
-    texto=`Última revisión hace ${Math.floor(horas)} horas.`;
+    texto=`Última revisión: ${fecha}.`;
   } else {
     tono="azul";
-    texto=`Última revisión hace ${horas<1?"menos de una hora":Math.floor(horas)+" horas"}.`;
+    texto=`Última revisión: ${fecha}.`;
   }
 
   const c = {rojo:"var(--rojo)",amarillo:"var(--amarillo)",azul:"var(--azul)"}[tono];
