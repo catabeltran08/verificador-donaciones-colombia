@@ -237,6 +237,29 @@ razonable construir un tercer workflow de n8n con el mismo patrón (buscar en pr
 corroborar contra el artículo real, dejar en una cola para revisión humana) si el
 mantenimiento manual se vuelve mucho trabajo.
 
+### Donación de sangre y apoyo psicológico
+
+Añadidos el 12 ago 2026, con el mismo material de "Ayuda Mutua Colombia". Dos
+secciones nuevas, cada una con el diseño que pidió la usuaria explícitamente para
+no saturar la página:
+
+- **Donación de sangre** (`sangre` en `datos.json`, mismo formato
+  `[ciudad — organización, texto]` que `acopio`): buscador **separado** del de
+  acopio, mismo patrón de "no muestra nada hasta que escribes" — a propósito, para
+  no mezclar un banco de sangre con un punto de comida en el mismo resultado.
+  23 puntos en 6 ciudades.
+- **Apoyo psicológico** (`salud_mental` en `datos.json`, formato
+  `[nombre, texto]`): lista fija siempre visible, **sin buscador**, porque son
+  recursos nacionales (líneas de WhatsApp/teléfono) que no dependen de ciudad y son
+  solo 3 — un buscador ahí habría sido fricción sin beneficio.
+
+Ninguna de las dos pasa por el comparador (`analyze()`/`veredicto()`): son
+directorios de consulta, igual que `acopio`, no verificaciones de pago. Mismo nivel
+de honestidad que el resto: cada entrada dice que viene de redes sociales, no de un
+canal oficial confirmado, y para salud mental se avisa explícitamente cuando un
+número tiene indicativo de otro país (el de PRAXIS es +52, México) para que nadie
+se confunda marcando.
+
 ---
 
 ## 4. Paso a paso: de cero a publicado

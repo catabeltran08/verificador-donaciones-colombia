@@ -185,6 +185,15 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
 <input type="search" id="buscar-acopio" class="buscar" placeholder="Ej.: Manizales, Cali, Bogotá…" autocomplete="off">
 <div id="acopio"></div>
 
+<h2>Donación de sangre</h2>
+<p class="hint">Escribe tu ciudad. Estos puntos salieron de una hoja colaborativa armada por voluntarios a partir de redes sociales, no de sitios oficiales — llama antes de ir para confirmar horario y requisitos.</p>
+<input type="search" id="buscar-sangre" class="buscar" placeholder="Ej.: Bogotá, Cali, Medellín…" autocomplete="off">
+<div id="sangre"></div>
+
+<h2>Apoyo psicológico</h2>
+<p class="hint">Líneas gratuitas de acompañamiento emocional. Tampoco son un canal oficial verificado por nosotros — si alguna ya no responde, cuéntanos con el botón de reportar.</p>
+<div id="salud-mental"></div>
+
 <h2>Cómo leerlo</h2>
 <details><summary>Por qué no existe un veredicto "es legítimo"</summary>
 <p>Ninguna herramienta automática puede certificar que una organización va a entregar el dinero. Lo único que se puede afirmar con certeza es si un dato <em>coincide o no</em> con lo que una organización publicó. Todo lo demás son señales de riesgo, y una señal de riesgo no es una acusación: una campaña de barrio perfectamente honesta no va a aparecer en esta lista.</p></details>
@@ -423,9 +432,43 @@ const ACOPIO_EMBEBIDO = [
   ["Pasto — Clinimedical Group","Calle 16D # 40-49: Alimentos no perecederos, agua, elementos de aseo e higiene personal, artículos para bebé, ropa y cobijas, artículos para animales, medicinas e insumos médicos, otros elementos de primera necesidad. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."]
 ];
 
+const SANGRE_EMBEBIDO = [
+  ["Bogotá — Banco Distrital de Sangre", "Varios - consultar fecha y lugar acá: https://idcbis.org.co/banco-distrital-de-sangre/ Ubicación principal: Avenida Carrera 68 # 68B-31 — Cel:: 3102172379 / 3205027640 / 3425027663. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Instituto Distrital de Ciencia, Biotecnología e Innovación en Salud (IDCBIS)", "Carrera 32 # 12-81 — Tel.: 3649620 Ext. 9441-9726. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Instituto Nacional de Cancerología", "Avenida 1 # 9-85 — Tel.: 4817000 Ext. 5363-5362. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Hospital Militar Central", "Transversal 3 # 49-02, tercer piso sur — Tel.: 3486868 Ext. 5375-5362 Cel.: 3158633770. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Hospital Universitario Clínica San Rafael", "Carrera 8 # 17-44 Sur, piso 2 — Tel.: 7464714 Ext. 2351-2354. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Sociedad de Cirugía de Bogotá Hospital de San José", "Calle 10 # 18-75 — Tel.: 3538000 Ext. 458-471. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Fundación Cardio Infantil", "Carrera 13B # 161-85, Piso 2, Torre H — Tel.: 6672727 Ext. 72103-72104-72106 Cel.: 317675500 / 3173798034. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Fundación Hospital de la Misericordia", "Av. Caracas # 1-65, piso 2 — Tel.:3282510 Ext. 1230-1231. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Clinica de Marly", "Calle 50 # 9-67, piso 2 — Tel.: 3436600 Ext. 1224-2224-2225. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Clínica Colsánitas", "Calle 166 # 22-68 — Tel.: 5895468 / 5718610 Cel.: 3153384374. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Hospital Central Policía Nacional", "Carrera 59 # 26-24 (CAN) — Tel.: 5804401 Ext. 2187-2188. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Fundación Hematológica Colombiana - FUHECO", "Carrera 65 # 81-67 — Tel.: 7467888 Ext. 149-112. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Fundación Karl Landsteiner In Memoriam", "Carrera 45A # 94-50 — Tel.: 6915541 Ext. 105. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Fundación Hospital Infantil Universitario de San José", "Carrera 52 # 67A-71 — Tel.: 4377540 Ext. 5033. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Fundación Banco Nacoinal de Sangre Hemolife", "Calle 23 # 116-31 — Tel.: 7428124 Ext. 101-123. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Bogotá — Hospital Universitario de la Samaritana", "Carrera 8 # 0-29 Sur — Tel.: 7051111 / 4077075. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Manizales — Hemocentro del Café y Tolima", "Cancha Auxiliar, al lado de Bomberos (Palogrande) — Cel: 3104560822. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Cali — Hospital Universitario del Valle Evaristo García E.S.E", "Calle 5 # 36-08. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Cali — Banco Regional Cali", "Carrera 38 Bis # 5-91 — Cel.: 3116258815. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Medellín — Banco Regional Medellín", "Carrera 52 # 25-310 — Cel.: 3017016237. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Villavicencio — Punto de Captación Cruz Roja", "Carrera 30 # 39-30 — Cel.: 3102755012. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Cartagena — Banco Regional Cartagena", "Calle 30 # 44D-71 — Cel.: 3106276160. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."],
+  ["Armenia — Banco Regional Armenia", "Av. Bolívar # 23 Norte - 60 — Cel.: 3164781842 / 3006481293. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no verificado dígito por dígito contra una fuente oficial."]
+];
+
+const SALUD_MENTAL_EMBEBIDO = [
+  ["PRAXIS Grupos Operativos Psicosociales", "Apoyo psicológico gratuito por el sismo: primeros auxilios psicológicos y contención emocional. WhatsApp: +52 55 3320 0457 (wa.me/5215533200457) — número con indicativo de México, ojo al escribir. Instagram: instagram.com/p/Db3qET9tebz. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no confirmado contra un sitio oficial."],
+  ["Fundación Sergio Urrego", "Línea Salvavidas de acompañamiento emocional: 311 766 8666, de 8:00 a.m. a 10:00 p.m. Instagram: instagram.com/fundacionsergiourrego. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no confirmado contra un sitio oficial."],
+  ["Corporación Emergencias Apolo", "Zonas de Escucha Psicológica Gratuitas, presencial o virtual, de 9:00 a.m. a 4:00 p.m. Cupos limitados — agenda tu cita al 319 562 5646. Según la hoja colaborativa Ayuda Mutua Colombia (recopilada de redes sociales, 12 ago 2026); no confirmado contra un sitio oficial."]
+];
+
 /* Estado vivo: arranca con el respaldo y se sustituye si datos.json responde. */
 let ORGS = ORGS_EMBEBIDO;
 let ACOPIO = ACOPIO_EMBEBIDO;
+let SANGRE = SANGRE_EMBEBIDO;
+let SALUD_MENTAL = SALUD_MENTAL_EMBEBIDO;
 let PENDIENTES = []; // candidatas detectadas en prensa por n8n/workflow-descubrimiento.json — nunca dan azul
 let VERIFICADO_EL = "2026-08-11T09:00:00Z";
 let ORIGEN = "respaldo";
@@ -645,6 +688,8 @@ $("#dir").innerHTML = ORGS.map(o=>`
   </article>`).join("");
 
 pintarAcopio($("#buscar-acopio")?.value || "");
+pintarSangre($("#buscar-sangre")?.value || "");
+pintarSaludMental();
 
 }
 
@@ -658,6 +703,22 @@ function pintarAcopio(filtro){
   $("#acopio").innerHTML = lista.length
     ? lista.map(([c,d])=>`<article class="org"><h3>${esc(c)}</h3><p class="what" style="margin-bottom:0">${esc(d)}</p></article>`).join("")
     : `<article class="org"><h3>Sin resultados para "${esc(filtro)}"</h3><p class="what" style="margin-bottom:0">No tenemos un punto de acopio confirmado para esa ciudad o pueblo todavía. Antes de moverte, llama a la Alcaldía o a la Cruz Roja local para confirmar un lugar habilitado, o dona directamente por los canales oficiales de arriba (Bre-B / cuenta) — llegan igual, sin que tengas que desplazarte.</p></article>`;
+}
+
+function pintarSangre(filtro){
+  const f = norm(filtro);
+  if(!f){
+    $("#sangre").innerHTML = `<p class="hint">Escribe tu ciudad arriba para ver los puntos de donación de sangre que tenemos.</p>`;
+    return;
+  }
+  const lista = SANGRE.filter(([c])=>norm(c).includes(f));
+  $("#sangre").innerHTML = lista.length
+    ? lista.map(([c,d])=>`<article class="org"><h3>${esc(c)}</h3><p class="what" style="margin-bottom:0">${esc(d)}</p></article>`).join("")
+    : `<article class="org"><h3>Sin resultados para "${esc(filtro)}"</h3><p class="what" style="margin-bottom:0">No tenemos un punto de donación de sangre confirmado para esa ciudad todavía. Llama a la Cruz Roja local o a un hospital cercano para confirmar dónde reciben donantes.</p></article>`;
+}
+
+function pintarSaludMental(){
+  $("#salud-mental").innerHTML = SALUD_MENTAL.map(([n,d])=>`<article class="org"><h3>${esc(n)}</h3><p class="what" style="margin-bottom:0">${esc(d)}</p></article>`).join("");
 }
 
 /* ============ FRESCURA Y CARGA REMOTA ============ */
@@ -699,6 +760,8 @@ async function cargar(){
     if(!Array.isArray(d.orgs) || !d.orgs.length) throw new Error("vacío");
     ORGS = d.orgs;
     ACOPIO = Array.isArray(d.acopio) ? d.acopio : ACOPIO_EMBEBIDO;
+    SANGRE = Array.isArray(d.sangre) ? d.sangre : SANGRE_EMBEBIDO;
+    SALUD_MENTAL = Array.isArray(d.salud_mental) ? d.salud_mental : SALUD_MENTAL_EMBEBIDO;
     VERIFICADO_EL = d.meta?.verificado_el || VERIFICADO_EL;
     ORIGEN = "remoto";
   }catch(e){
@@ -728,4 +791,5 @@ $("#go").addEventListener("click",()=>render(analyze($("#in").value)));
 $("#clr").addEventListener("click",()=>{$("#in").value="";$("#out").innerHTML="";$("#in").focus();});
 $("#in").addEventListener("keydown",e=>{ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") render(analyze($("#in").value)); });
 $("#buscar-acopio").addEventListener("input",e=>pintarAcopio(e.target.value));
+$("#buscar-sangre").addEventListener("input",e=>pintarSangre(e.target.value));
 </script>
