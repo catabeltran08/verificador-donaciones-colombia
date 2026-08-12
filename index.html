@@ -152,8 +152,23 @@ html{scroll-behavior:smooth}
 h2,section.checker{scroll-margin-top:76px}
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:50;height:60px;
-  display:flex;align-items:center;justify-content:space-between;
   padding:0 20px;background:var(--paper);border-bottom:2px solid var(--ink)
+}
+.topbar-inner{
+  max-width:760px;margin:0 auto;height:100%;
+  display:flex;align-items:center;justify-content:space-between;gap:16px
+}
+.topnav{display:none;gap:18px;flex-wrap:wrap}
+.topnav a{
+  font-family:var(--disp);font-weight:700;font-variation-settings:'wdth' 82,'wght' 700;
+  font-size:11px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;
+  color:var(--ink);text-decoration:none
+}
+.topnav a:hover{color:var(--azul)}
+.topnav a:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+@media (min-width:860px){
+  .topnav{display:flex}
+  .menu-btn{display:none}
 }
 .menu-btn{
   width:40px;height:40px;padding:0;
@@ -193,10 +208,19 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
 </style>
 
 <div class="topbar">
-  <img src="logo.svg" alt="" class="logo">
-  <button id="menu-btn" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menú">
-    <span></span><span></span><span></span>
-  </button>
+  <div class="topbar-inner">
+    <img src="logo.svg" alt="" class="logo">
+    <nav class="topnav">
+      <a href="#revisar">Revisar</a>
+      <a href="#canales">Canales oficiales</a>
+      <a href="#puntos-de-acopio">Puntos de acopio</a>
+      <a href="#donacion-sangre">Donación de sangre</a>
+      <a href="#apoyo-psicologico">Apoyo psicológico</a>
+    </nav>
+    <button id="menu-btn" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </div>
 <nav id="menu-panel" class="menu-panel" hidden>
   <a href="#revisar">Revisar</a>
