@@ -128,7 +128,7 @@ input.buscar{
   border:2px solid var(--ink);border-radius:2px;
 }
 input.buscar:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
-.org{background:var(--card);border:1px solid var(--rule);border-radius:2px;padding:18px;margin-bottom:14px}
+.org{background:var(--card);border:1px solid var(--rule);border-radius:2px;padding:18px;margin-bottom:14px;overflow-wrap:break-word;word-break:break-word}
 .org h3{
   font-family:var(--disp);font-weight:800;font-variation-settings:'wdth' 85,'wght' 750;
   font-size:19px;margin:0 0 3px;line-height:1.2
@@ -152,7 +152,7 @@ html{scroll-behavior:smooth}
 h2,section.checker{scroll-margin-top:76px}
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:50;height:60px;
-  padding:0 20px;background:var(--paper);border-bottom:2px solid var(--ink)
+  padding:0 28px 0 20px;background:var(--paper);border-bottom:2px solid var(--ink)
 }
 .topbar-inner{
   max-width:760px;margin:0 auto;height:100%;
@@ -166,10 +166,6 @@ h2,section.checker{scroll-margin-top:76px}
 }
 .topnav a:hover{color:var(--azul)}
 .topnav a:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
-@media (min-width:860px){
-  .topnav{display:flex}
-  .menu-btn{display:none}
-}
 .menu-btn{
   width:40px;height:40px;padding:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
@@ -194,6 +190,10 @@ h2,section.checker{scroll-margin-top:76px}
 }
 .menu-panel a:last-child{border-bottom:none}
 .menu-panel a:hover{background:var(--azul);color:#fff}
+@media (min-width:860px){
+  .topnav{display:flex}
+  .menu-btn{display:none}
+}
 .menu-panel a:focus-visible{outline:3px solid var(--azul);outline-offset:-3px}
 
 details{border-top:1px solid var(--rule);padding:14px 0}
@@ -608,6 +608,15 @@ function diffHTML(a,b){
   return out;
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+/* Convierte URLs sueltas (con o sin https://) en enlaces clicables, sobre texto ya escapado. */
+function linkify(s){
+  return esc(s).replace(/(https?:\/\/[^\s<]+|(?:[\w-]+\.)+(?:com|org|co|net|gov)(?:\.[a-z]{2})?(?:\/[^\s<]*)?)/gi, m=>{
+    const trail = (m.match(/[.,;:!?)]+$/) || [""])[0];
+    const clean = trail ? m.slice(0, -trail.length) : m;
+    const href = /^https?:\/\//i.test(clean) ? clean : "https://"+clean;
+    return `<a href="${href}" target="_blank" rel="noopener">${clean}</a>${trail}`;
+  });
+}
 
 /* ============ ANÁLISIS ============ */
 function analyze(text){
@@ -777,7 +786,7 @@ function pintarAcopio(filtro){
   }
   const lista = ACOPIO.filter(([c])=>norm(c).includes(f));
   $("#acopio").innerHTML = lista.length
-    ? lista.map(([c,d])=>`<article class="org"><h3>${esc(c)}</h3><p class="what" style="margin-bottom:0">${esc(d)}</p></article>`).join("")
+    ? lista.map(([c,d])=>`<article class="org"><h3>${esc(c)}</h3><p class="what" style="margin-bottom:0">${linkify(d)}</p></article>`).join("")
     : `<article class="org"><h3>Sin resultados para "${esc(filtro)}"</h3><p class="what" style="margin-bottom:0">No tenemos un punto de acopio confirmado para esa ciudad o pueblo todavía. Antes de moverte, llama a la Alcaldía o a la Cruz Roja local para confirmar un lugar habilitado, o dona directamente por los canales oficiales de arriba (Bre-B / cuenta) — llegan igual, sin que tengas que desplazarte.</p></article>`;
 }
 
@@ -789,12 +798,12 @@ function pintarSangre(filtro){
   }
   const lista = SANGRE.filter(([c])=>norm(c).includes(f));
   $("#sangre").innerHTML = lista.length
-    ? lista.map(([c,d])=>`<article class="org"><h3>${esc(c)}</h3><p class="what" style="margin-bottom:0">${esc(d)}</p></article>`).join("")
+    ? lista.map(([c,d])=>`<article class="org"><h3>${esc(c)}</h3><p class="what" style="margin-bottom:0">${linkify(d)}</p></article>`).join("")
     : `<article class="org"><h3>Sin resultados para "${esc(filtro)}"</h3><p class="what" style="margin-bottom:0">No tenemos un punto de donación de sangre confirmado para esa ciudad todavía. Llama a la Cruz Roja local o a un hospital cercano para confirmar dónde reciben donantes.</p></article>`;
 }
 
 function pintarSaludMental(){
-  $("#salud-mental").innerHTML = SALUD_MENTAL.map(([n,d])=>`<article class="org"><h3>${esc(n)}</h3><p class="what" style="margin-bottom:0">${esc(d)}</p></article>`).join("");
+  $("#salud-mental").innerHTML = SALUD_MENTAL.map(([n,d])=>`<article class="org"><h3>${esc(n)}</h3><p class="what" style="margin-bottom:0">${linkify(d)}</p></article>`).join("");
 }
 
 /* ============ FRESCURA Y CARGA REMOTA ============ */
