@@ -28,6 +28,7 @@ html{-webkit-text-size-adjust:100%}
 body{
   margin:0;background:var(--paper);color:var(--ink);
   font-family:var(--body);font-size:17px;line-height:1.55;
+  padding-top:60px;
 }
 .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
 
@@ -147,9 +148,13 @@ input.buscar:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
 /* ---------- menú ---------- */
 html{scroll-behavior:smooth}
 h2,section.checker{scroll-margin-top:76px}
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:50;height:60px;
+  display:flex;align-items:center;justify-content:flex-end;
+  padding:0 20px;background:var(--paper);border-bottom:2px solid var(--ink)
+}
 .menu-btn{
-  position:fixed;top:16px;right:16px;z-index:50;
-  width:44px;height:44px;padding:0;
+  width:40px;height:40px;padding:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
   background:var(--card);border:2px solid var(--ink);border-radius:2px;cursor:pointer
 }
@@ -158,7 +163,7 @@ h2,section.checker{scroll-margin-top:76px}
 .menu-btn:hover span{background:#fff}
 .menu-btn:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
 .menu-panel{
-  position:fixed;top:66px;right:16px;z-index:50;
+  position:fixed;top:70px;right:20px;z-index:50;
   background:var(--card);border:2px solid var(--ink);border-radius:2px;
   display:flex;flex-direction:column;min-width:230px;
   box-shadow:0 8px 24px rgba(15,23,32,.18)
@@ -185,9 +190,11 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
 }
 </style>
 
-<button id="menu-btn" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menú">
-  <span></span><span></span><span></span>
-</button>
+<div class="topbar">
+  <button id="menu-btn" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</div>
 <nav id="menu-panel" class="menu-panel" hidden>
   <a href="#revisar">Revisar</a>
   <a href="#canales">Canales oficiales</a>
