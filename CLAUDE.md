@@ -191,13 +191,20 @@ aunque nuestro servidor esté caído.
 
 ### El buscador de puntos de acopio
 
-Es una lista curada a mano (`acopio` en `datos.json`, formato `[ciudad, dirección]`),
-con una caja de búsqueda arriba que filtra por texto sin importar tildes/mayúsculas
-(`escribe.co` matches con `Bogotá — Cruz Roja`, por ejemplo). **No hay ningún
-buscador web en vivo detrás** — no es posible sin backend (expondría una API key) y
-no sería seguro (un resultado de búsqueda puede ser una campaña falsa o una
-dirección vieja, y mostrarlo con la misma autoridad visual que el resto de la
-página lo estaría avalando sin querer — justo lo que la Regla 6 prohíbe).
+Es una lista curada a mano (`acopio` en `datos.json`, formato `[ciudad, dirección]`,
+hoy con 81 puntos en unas 30 ciudades), con una caja de búsqueda arriba que filtra
+por texto sin importar tildes/mayúsculas (`escribe.co` matches con
+`Bogotá — Cruz Roja`, por ejemplo). **No hay ningún buscador web en vivo detrás** —
+no es posible sin backend (expondría una API key) y no sería seguro (un resultado
+de búsqueda puede ser una campaña falsa o una dirección vieja, y mostrarlo con la
+misma autoridad visual que el resto de la página lo estaría avalando sin querer —
+justo lo que la Regla 6 prohíbe).
+
+Desde el 12 ago 2026 la caja **no muestra nada hasta que escribes algo** (antes
+mostraba los 7 puntos que había de una vez). Se cambió a modo solo-búsqueda porque
+la lista creció mucho ese mismo día (de 7 a 81, ver abajo) y mostrarla completa por
+defecto habría hecho la página larguísima. Si tocas `pintarAcopio()`, no reviertas
+esto a "mostrar todo cuando el filtro está vacío".
 
 Si buscas una ciudad que no está en la lista, sale un mensaje neutral: no hay punto
 confirmado, llama a la Alcaldía/Cruz Roja local, o dona por los canales oficiales de
@@ -210,6 +217,19 @@ concreta y confirmada (por ejemplo porque el banco de alimentos local también q
 afectado por el sismo), dilo explícitamente en el texto en vez de inventar una — así
 se hizo con Manizales y Pereira, donde ambos bancos de alimentos locales quedaron
 dañados y no había sede alterna confirmada todavía.
+
+**Dos fuentes ya usadas, con rigor distinto:** un artículo de El Tiempo con el mapa
+completo de centros de acopio del país (prensa, buena autoridad — se usó para
+ampliar de 7 a 17 puntos) y la hoja colaborativa **"Ayuda Mutua Colombia"** en
+Google Sheets (comunitaria, recopilada de publicaciones de Instagram por
+voluntarios — se usó para los ~64 puntos adicionales de "donaciones en especie",
+llevando el total a 81). La segunda fuente es de menor autoridad que prensa: cada
+entrada de "Ayuda Mutua Colombia" lo dice explícitamente en su texto ("recopilado
+de redes sociales... no verificado dígito por dígito"). Esto es aceptable para
+*direcciones físicas* porque el peor caso si algo está mal es un viaje en vano
+(columna inútil de la Regla 6) — **no aplica igual a datos de pago**, ver el
+apartado siguiente sobre por qué no se automatiza ni se confía en cuentas
+personales que solo existen como post de Instagram.
 
 A diferencia de las organizaciones (sección 5b), **hoy no existe automatización que
 descubra ciudades nuevas sola** — cada una se investiga y se agrega a mano. Sería
@@ -262,6 +282,39 @@ tienen ningún dato de pago publicado como texto — sus portales son pasarelas 
 pago / formularios con montos fijos, no cuentas estáticas — así que se quedaron
 sin campo `pay` verificable, con una nota explicando por qué y enlazando al canal
 real. Eso es correcto, no un pendiente: no existe nada que verificar todavía.
+
+**Segunda ronda, 12 ago 2026 — 7 organizaciones más, a partir de una hoja de
+donaciones recopilada a mano por voluntarios ("Ayuda Mutua Colombia").** Esa hoja
+en sí no es fuente primaria (la mayoría de sus filas citan un post de Instagram, no
+el sitio propio de la organización, y varias son cuentas Nequi/Bancolombia
+*personales* atadas a un individuo) — se usó solo como lista de candidatas con
+dominio propio, y a cada una se le hizo el Paso 1 de verdad visitando su sitio.
+Resultado: **World Central Kitchen** (`wck.org`) quedó `"oficial"` con cuenta
+ACH/routing de EE. UU., PayPal y Venmo, confirmados carácter por carácter contra
+el HTML crudo (no solo el resumen de la herramienta de lectura). Presentes
+Corporación (`presentes.co`), Patrulla Aérea Civil del Pacífico
+(`pac-pacifico.org`), ACN Colombia (`acncolombia.org`), Check New Places
+(`checknewplaces.com`) y Fundación Internacional María Luisa de Moreno
+(`marialuisa.foundation`) quedaron con `nodata` — todas tienen solo formulario de
+pago en línea, ninguna cuenta estática que copiar. New England Association for
+Colombian Children quedó con `nodata` también, sin campo `domains` porque su único
+canal es una página de Givebutter (plataforma compartida por miles de campañas, no
+un dominio propio de la organización).
+
+Quedaron **sin verificar por bloqueo anti-bot** (403 al intentar leer la página):
+Save the Children, UNICEF USA y Caring for Colombia. Alguien tiene que abrirlas a
+mano en el navegador cuando haya tiempo — no se les inventó nada mientras tanto.
+
+**Decisión explícita: las cuentas personales que solo existen como post de
+Instagram no entran a `datos.json`, y no se automatiza ninguna verificación contra
+Instagram.** No es solo que raspar Instagram sea técnicamente frágil — el problema
+de fondo es que una cuenta de Instagram no tiene el ancla de confianza que sí tiene
+un dominio (nadie tiene que demostrar ser dueño del nombre para crear una cuenta
+nueva). "Verificar" contra un post solo confirmaría que un texto coincide con *un*
+post entre varios posibles, sin poder decir cuál es el real — no protege a nadie
+que no pueda ya leer ese mismo post con sus propios ojos. Para esas campañas, el
+amarillo honesto que ya da la herramienta (más las alertas de patrón de "cuenta
+personal") es el comportamiento correcto, no un hueco por tapar.
 
 ### Paso 2 — Aplicar la Regla 2 ✅
 
