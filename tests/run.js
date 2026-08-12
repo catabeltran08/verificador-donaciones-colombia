@@ -18,6 +18,7 @@ function fakeEl(){
     addEventListener(){}, removeEventListener(){},
     setAttribute(){}, focus(){},
     querySelector(){ return fakeEl(); },
+    querySelectorAll(){ return []; },
   };
 }
 
@@ -29,7 +30,7 @@ function cargarLogica(){
   const code = html.slice(start, end);
 
   const contexto = {
-    document: { querySelector: () => fakeEl() },
+    document: { querySelector: () => fakeEl(), addEventListener(){} },
     fetch: () => Promise.reject(new Error('sin red en las pruebas — se usa el respaldo embebido')),
     console, URL, setInterval, clearInterval,
   };

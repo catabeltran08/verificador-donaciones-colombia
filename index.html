@@ -144,6 +144,36 @@ input.buscar:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
 .org a{color:var(--azul);text-decoration-thickness:1px;text-underline-offset:2px}
 .org .src{font-size:12px;color:var(--ink-40);margin:14px 0 0;padding-top:10px;border-top:1px solid var(--rule)}
 
+/* ---------- menú ---------- */
+html{scroll-behavior:smooth}
+h2,section.checker{scroll-margin-top:76px}
+.menu-btn{
+  position:fixed;top:16px;right:16px;z-index:50;
+  width:44px;height:44px;padding:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  background:var(--card);border:2px solid var(--ink);border-radius:2px;cursor:pointer
+}
+.menu-btn span{display:block;width:20px;height:2px;background:var(--ink)}
+.menu-btn:hover{background:var(--azul);border-color:var(--azul)}
+.menu-btn:hover span{background:#fff}
+.menu-btn:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+.menu-panel{
+  position:fixed;top:66px;right:16px;z-index:50;
+  background:var(--card);border:2px solid var(--ink);border-radius:2px;
+  display:flex;flex-direction:column;min-width:230px;
+  box-shadow:0 8px 24px rgba(15,23,32,.18)
+}
+.menu-panel[hidden]{display:none}
+.menu-panel a{
+  font-family:var(--disp);font-variation-settings:'wdth' 82,'wght' 700;
+  font-size:13px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--ink);text-decoration:none;padding:14px 18px;
+  border-bottom:1px solid var(--rule)
+}
+.menu-panel a:last-child{border-bottom:none}
+.menu-panel a:hover{background:var(--azul);color:#fff}
+.menu-panel a:focus-visible{outline:3px solid var(--azul);outline-offset:-3px}
+
 details{border-top:1px solid var(--rule);padding:14px 0}
 summary{cursor:pointer;font-family:var(--disp);font-variation-settings:'wdth' 85,'wght' 700;font-size:15px}
 summary:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
@@ -154,6 +184,17 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
   @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 }
 </style>
+
+<button id="menu-btn" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menú">
+  <span></span><span></span><span></span>
+</button>
+<nav id="menu-panel" class="menu-panel" hidden>
+  <a href="#revisar">Revisar</a>
+  <a href="#canales">Canales oficiales</a>
+  <a href="#puntos-de-acopio">Puntos de acopio</a>
+  <a href="#donacion-sangre">Donación de sangre</a>
+  <a href="#apoyo-psicologico">Apoyo psicológico</a>
+</nav>
 
 <div class="wrap">
 <header>
@@ -175,7 +216,7 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
 <details><summary>Si perdiste contacto con alguien</summary>
 <p>No busques listas de víctimas en redes: circulan nombres falsos y duplicados. La Cruz Roja Colombiana maneja el programa de Protección de Vínculos Familiares en <a href="mailto:rcf@cruzrojacolombiana.org">rcf@cruzrojacolombiana.org</a> y WhatsApp +57&nbsp;321&nbsp;213&nbsp;9525.</p></details>
 
-<section class="checker">
+<section class="checker" id="revisar">
   <label class="q" for="in">Pega lo que quieres revisar</label>
   <p class="hint">Funciona con un solo dato suelto — una cuenta, una llave Bre-B, un enlace — o con el mensaje o pantallazo completo (WhatsApp, Instagram, TikTok): con el texto completo también se revisan las señales de fraude, no solo los números.</p>
   <textarea id="in" placeholder="Ej.: URGENTE 🙏 Ayuda a las familias de Pereira. Cuenta Bancolombia 15264342371 a nombre de Fundación... Bre-B: emergenciaterrem"></textarea>
@@ -186,21 +227,21 @@ footer{margin-top:56px;padding-top:20px;border-top:2px solid var(--ink);font-siz
   <div id="out"></div>
 </section>
 
-<h2>Canales oficiales publicados</h2>
+<h2 id="canales">Canales oficiales publicados</h2>
 <p class="hint">Cada dato tiene su fuente y su fecha. <strong>Antes de transferir, ábrelo en el sitio oficial de la organización</strong> y compara — no confíes en esta lista como última palabra.</p>
 <div id="dir"></div>
 
-<h2>Puntos de acopio</h2>
+<h2 id="puntos-de-acopio">Puntos de acopio</h2>
 <p class="hint">Escribe tu ciudad o pueblo. Solo se reciben alimentos no perecederos y elementos de aseo — no lleves ropa, medicamentos ni productos vencidos: saturan la bodega y hay que botarlos.</p>
 <input type="search" id="buscar-acopio" class="buscar" placeholder="Ej.: Manizales, Cali, Bogotá…" autocomplete="off">
 <div id="acopio"></div>
 
-<h2>Donación de sangre</h2>
+<h2 id="donacion-sangre">Donación de sangre</h2>
 <p class="hint">Escribe tu ciudad. Estos puntos salieron de una hoja colaborativa armada por voluntarios a partir de redes sociales, no de sitios oficiales — llama antes de ir para confirmar horario y requisitos.</p>
 <input type="search" id="buscar-sangre" class="buscar" placeholder="Ej.: Bogotá, Cali, Medellín…" autocomplete="off">
 <div id="sangre"></div>
 
-<h2>Apoyo psicológico</h2>
+<h2 id="apoyo-psicologico">Apoyo psicológico</h2>
 <p class="hint">Líneas gratuitas de acompañamiento emocional. Tampoco son un canal oficial verificado por nosotros — si alguna ya no responde, cuéntanos con el botón de reportar.</p>
 <div id="salud-mental"></div>
 
@@ -793,4 +834,16 @@ $("#clr").addEventListener("click",()=>{$("#in").value="";$("#out").innerHTML=""
 $("#in").addEventListener("keydown",e=>{ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") render(analyze($("#in").value)); });
 $("#buscar-acopio").addEventListener("input",e=>pintarAcopio(e.target.value));
 $("#buscar-sangre").addEventListener("input",e=>pintarSangre(e.target.value));
+
+/* ============ MENÚ ============ */
+const menuBtn = $("#menu-btn");
+const menuPanel = $("#menu-panel");
+function cerrarMenu(){ menuPanel.hidden = true; menuBtn.setAttribute("aria-expanded","false"); }
+function abrirMenu(){ menuPanel.hidden = false; menuBtn.setAttribute("aria-expanded","true"); }
+menuBtn.addEventListener("click", ()=> menuPanel.hidden ? abrirMenu() : cerrarMenu());
+menuPanel.querySelectorAll("a").forEach(a=>a.addEventListener("click", cerrarMenu));
+document.addEventListener("click", e=>{
+  if(!menuPanel.hidden && !menuPanel.contains(e.target) && e.target!==menuBtn) cerrarMenu();
+});
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrarMenu(); });
 </script>
