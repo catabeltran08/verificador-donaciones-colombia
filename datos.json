@@ -64,13 +64,18 @@
       "pay": [
         [
           "Línea de atención",
-          "601 4376300",
-          "press"
+          "601 794 6566",
+          "oficial"
+        ],
+        [
+          "Línea nacional gratuita",
+          "01 8005 19 8534",
+          "oficial"
         ],
         [
           "Contacto donaciones",
           "donaciones@cruzrojacolombiana.org",
-          "press"
+          "oficial"
         ],
         [
           "Vínculos familiares (WhatsApp)",
@@ -78,9 +83,9 @@
           "press"
         ]
       ],
-      "nodata": "No encontramos un número de cuenta bancaria publicado en los canales oficiales al 11 ago 2026: el portal de donación es una pasarela de pago en línea (tarjeta/PSE), no muestra una cuenta estática. Dona directamente desde el portal oficial.",
+      "nodata": "No encontramos un número de cuenta bancaria publicado en los canales oficiales al 12 ago 2026: el portal de donación es una pasarela de pago en línea (tarjeta/PSE), no muestra una cuenta estática. Dona directamente desde el portal oficial.",
       "src": [
-        "Verificado a mano en cruzrojacolombiana.org y ayuda.cruzrojacolombiana.org, 11 ago 2026",
+        "Verificado a mano (HTML crudo, carácter por carácter) en cruzrojacolombiana.org y ayuda.cruzrojacolombiana.org, 12 ago 2026 — el teléfono 601 4376300 que teníamos antes ya no aparece en el sitio, se reemplazó por el que sí encontramos hoy. El WhatsApp de Vínculos Familiares (+57 321 213 9525) tampoco lo encontramos hoy en estas dos páginas; sigue como reportado, sin confirmar, hasta revisarlo en la página específica del programa.",
         "https://www.cruzrojacolombiana.org/"
       ]
     },
