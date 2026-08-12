@@ -221,8 +221,8 @@ mantenimiento manual se vuelve mucho trabajo.
 
 ## 4. Paso a paso: de cero a publicado
 
-> Estado real al 11 ago 2026: Pasos 0–4 hechos. Paso 5 construido pero sin correr
-> todavía en una instancia real de n8n. Paso 6 pendiente.
+> Estado real al 12 ago 2026: Pasos 0–5 hechos, los dos workflows de n8n activos
+> en producción. Paso 6 pendiente.
 
 ### Paso 0 — Preparar la carpeta ✅
 
@@ -292,15 +292,30 @@ subdominio `tu-usuario.github.io` — a propósito, para que la URL pública no 
 el nombre de usuario de GitHub de quien la mantiene. El archivo `CNAME` en la raíz
 del repo es lo que le dice a GitHub Pages cuál es el dominio.
 
-### Paso 5 — Automatizar (sección 5 y 5b)
+### Paso 5 — Automatizar (sección 5 y 5b) ✅
 
 `n8n/workflow.json` (verificación de pagos de las orgs conocidas) y
-`n8n/workflow-descubrimiento.json` (descubrimiento de orgs nuevas vía prensa) ya
-están escritos y su lógica se probó en Node contra datos reales — pero **ninguno de
-los dos se ha corrido todavía dentro de una instancia real de n8n**. Antes de
-activarlos: importarlos, configurar credenciales (GitHub, Anthropic, healthchecks.io
-— un UUID por workflow), correr cada uno una vez a mano, y revisar el commit que
-produce antes de dejarlo en automático.
+`n8n/workflow-descubrimiento.json` (descubrimiento de orgs nuevas vía prensa) están
+importados en n8n Cloud, con sus credenciales (GitHub, Anthropic, healthchecks.io —
+un UUID por workflow) configuradas, y **los dos quedaron activos** (Schedule Trigger
+prendido) el 12 ago 2026, después de una corrida manual real de cada uno con
+resultado revisado a mano.
+
+*(Nota de una revisión real: la primera vez que se probaron dentro de n8n de verdad,
+los tres nodos que leen el cuerpo de una respuesta HTTP como texto plano —
+"Leer texto y calcular hash" en `workflow.json`, y "Expandir artículos candidatos" /
+"Extraer texto del artículo" en `workflow-descubrimiento.json` — asumían que n8n
+entrega ese texto en `resp.body`. Con `fullResponse:true` + `responseFormat:"text"`,
+en realidad lo entrega en `resp.data`. El código escrito a ciegas contra la
+documentación tenía ese supuesto mal, y como el error no revienta nada — simplemente
+produce texto vacío en silencio — la primera corrida de `workflow.json` pasó como
+"exitosa" sin haber leído la página real de ABACO. Se encontró al pedir captura del
+Output real de un nodo en vez de seguir adivinando, se corrigió en los tres sitios,
+y se volvió a correr cada flujo a mano para confirmar con evidencia real —no solo
+"no truena"— que sí estaban leyendo contenido real antes de activar el Schedule
+Trigger. Si algún día se agrega un nodo nuevo que lea una respuesta HTTP como texto,
+revisa el nombre del campo contra el Output real de n8n, no contra lo que "debería"
+llamarse.)*
 
 ### Paso 6 — Avisar a las organizaciones
 
